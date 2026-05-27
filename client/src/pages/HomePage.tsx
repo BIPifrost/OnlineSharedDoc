@@ -212,7 +212,7 @@ export function HomePage() {
         </section>
 
         <section className="home-entry-grid" id="home-entry-cards">
-          <article className="home-entry-card home-surface-hover">
+          <article className="home-entry-card home-surface-hover home-liquid-glass">
             <h2>创建文档</h2>
 
             <label className="field field--minimal">
@@ -249,7 +249,7 @@ export function HomePage() {
             </button>
           </article>
 
-          <article className="home-entry-card home-surface-hover">
+          <article className="home-entry-card home-surface-hover home-liquid-glass">
             <h2>加入文档</h2>
 
             <label className="field field--minimal">
@@ -286,7 +286,10 @@ export function HomePage() {
 
           <div className="home-notes__grid">
             {featureNotes.map((note) => (
-              <article key={note.title} className="note-card home-surface-hover">
+              <article
+                key={note.title}
+                className="note-card home-surface-hover home-liquid-glass"
+              >
                 <h3>{note.title}</h3>
                 <p>{note.description}</p>
               </article>
