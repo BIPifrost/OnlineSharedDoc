@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from "react";
+import { createPortal } from "react-dom";
 import {
   deleteMediaAsset,
   getMediaAssets,
@@ -44,6 +45,8 @@ export function MediaLibraryPanel({
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isResumingUpload, setIsResumingUpload] = useState(false);
   const [deletingAssetId, setDeletingAssetId] = useState<string | null>(null);
   const [mediaWidth, setMediaWidth] = useState(520);
   const [error, setError] = useState("");
@@ -90,9 +93,14 @@ export function MediaLibraryPanel({
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setIsResumingUpload(false);
     setError("");
     try {
-      const asset = await uploadMediaAsset(file, guestName);
+      const asset = await uploadMediaAsset(file, guestName, (progress, resumed) => {
+        setUploadProgress(progress);
+        setIsResumingUpload(resumed);
+      });
       setAssets((previous) => [asset, ...previous]);
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "媒体上传失败。");
@@ -122,7 +130,7 @@ export function MediaLibraryPanel({
     }
   }
 
-  return (
+  return createPortal((
     <div className="media-library-overlay" role="presentation" onMouseDown={onClose}>
       <section
         className="media-library-modal"
@@ -149,7 +157,7 @@ export function MediaLibraryPanel({
               onChange={handleFileChange}
               disabled={isUploading}
             />
-            {isUploading ? "上传中..." : "上传图片或视频"}
+            {isUploading ? `${isResumingUpload ? "续传中" : "上传中"} ${uploadProgress}%` : "上传图片或视频"}
           </label>
           <label className="media-image-size">
             媒体插入宽度
@@ -163,7 +171,7 @@ export function MediaLibraryPanel({
               <option value={960}>超大 (960px)</option>
             </select>
           </label>
-          <span>资源对所有参与编辑的用户可见，单文件不超过 100 MB。</span>
+          <span>资源对所有参与编辑的用户可见，大文件采用分块上传，重新选择相同文件可续传。</span>
           <span className="media-library-permission">
             {canDeleteAssets ? "你是本文档创建者，可以删除资源。" : "仅本文档创建者可以删除资源。"}
           </span>
@@ -219,5 +227,5 @@ export function MediaLibraryPanel({
         </div>
       </section>
     </div>
-  );
+  ), document.body);
 }

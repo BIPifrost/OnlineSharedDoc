@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { formatDateTime } from "./status";
 import type { WorkspaceAsyncState } from "./types";
 import type {
@@ -42,7 +43,7 @@ export function ImportSnapshotModal({
     return null;
   }
 
-  return (
+  return createPortal((
     <div
       className="import-modal-overlay"
       role="presentation"
@@ -214,5 +215,5 @@ export function ImportSnapshotModal({
         </footer>
       </section>
     </div>
-  );
+  ), document.body);
 }

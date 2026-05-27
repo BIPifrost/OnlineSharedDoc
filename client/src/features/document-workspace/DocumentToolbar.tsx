@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { ConnectionStatus } from "../document-editor";
 import { getConnectionStatusMeta, getSaveStatusMeta } from "./status";
 import type {
@@ -204,6 +205,9 @@ export function DocumentToolbar({
       </div>
 
       <div className="workspace-toolbar__actions">
+        <Link className="toolbar-button toolbar-button--home" to="/" title="返回首页">
+          返回首页
+        </Link>
         <button
           type="button"
           className={`toolbar-button${leftPanelOpen ? " toolbar-button--active" : ""}`}

@@ -968,6 +968,12 @@ input {
   min-width: 72px;
 }
 
+.toolbar-button--home {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .toolbar-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -2075,6 +2081,91 @@ input {
   background: #ffffff;
 }
 
+.workspace-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10025;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(4px);
+}
+
+.workspace-modal {
+  width: min(860px, 100%);
+  max-height: min(86vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.22);
+  padding: 0;
+}
+
+.workspace-modal--history {
+  width: min(1020px, 100%);
+}
+
+.workspace-modal.workspace-panel--history-detail {
+  min-height: 0;
+  margin-top: 0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.22);
+}
+
+.workspace-modal__header {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.workspace-modal__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.workspace-modal__close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 1.35rem;
+  cursor: pointer;
+}
+
+.workspace-modal__close:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.workspace-modal__content {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 24px 24px;
+}
+
+.workspace-modal--export .field {
+  margin-bottom: 16px;
+}
+
+.workspace-modal--history .workspace-empty,
+.workspace-modal--history .workspace-feedback {
+  margin: 0;
+}
+
+.workspace-modal--history .diff-viewer__frame {
+  min-height: min(52vh, 430px);
+}
+
 /* 导出面板 */
 .workspace-panel--export {
   margin-top: 12px;
@@ -2741,6 +2832,14 @@ input {
 }
 
 @media (max-width: 640px) {
+  .workspace-modal-overlay {
+    padding: 10px;
+  }
+
+  .workspace-modal {
+    max-height: 92vh;
+  }
+
   .media-library-overlay {
     padding: 10px;
   }

@@ -25,6 +25,7 @@ export function DocumentEntryPage() {
     id: number;
     text: string;
   } | null>(null);
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
 
   const workspaceRef = useRef(workspace);
   workspaceRef.current = workspace;
@@ -42,9 +43,7 @@ export function DocumentEntryPage() {
     (workspace.loadState === "loading" ? "正在加载文档..." : "文档工作区");
 
   function handleHistoryClick() {
-    document
-      .getElementById("document-history-panel")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setIsHistoryPanelOpen((previous) => !previous);
   }
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -303,9 +302,11 @@ export function DocumentEntryPage() {
             exportError={workspace.exportError}
             currentTitle={workspace.detail?.title ?? ""}
             onExport={workspace.handleExportDownload}
+            onClose={workspace.handleExportClick}
           />
 
           <DocumentHistoryPanel
+            isOpen={isHistoryPanelOpen}
             snapshots={workspace.snapshots}
             selectedSnapshotIds={workspace.selectedSnapshotIds}
             snapshotDetail={workspace.snapshotDetail}
@@ -315,6 +316,7 @@ export function DocumentEntryPage() {
             diffState={workspace.diffState}
             diffError={workspace.diffError}
             onClearSelection={workspace.handleClearSnapshotSelection}
+            onClose={() => setIsHistoryPanelOpen(false)}
           />
         </section>
       </section>

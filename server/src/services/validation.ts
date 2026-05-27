@@ -1,7 +1,7 @@
 import type { ExportFormat } from "../types/domain.js";
 import { HttpError } from "./http-errors.js";
 
-const exportFormats = new Set<ExportFormat>(["markdown", "html", "txt"]);
+const exportFormats = new Set<ExportFormat>(["markdown", "html", "txt", "media-zip"]);
 
 function requireTrimmedText(value: unknown, fieldName: string) {
   if (typeof value !== "string") {
@@ -77,7 +77,7 @@ export function validateExportFormat(value: unknown): ExportFormat {
   const text = requireTrimmedText(value, "format") as ExportFormat;
 
   if (!exportFormats.has(text)) {
-    throw new HttpError(400, "format must be one of markdown, html, or txt.");
+    throw new HttpError(400, "format must be one of markdown, html, txt, or media-zip.");
   }
 
   return text;

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 type HelpPanelProps = {
   isOpen: boolean;
@@ -125,7 +126,7 @@ export function HelpPanel({ isOpen, onClose }: HelpPanelProps) {
     return key;
   }
 
-  return (
+  return createPortal((
     <div className="help-panel-overlay" onClick={onClose}>
       <div
         className="help-panel-modal"
@@ -208,5 +209,5 @@ export function HelpPanel({ isOpen, onClose }: HelpPanelProps) {
         </div>
       </div>
     </div>
-  );
+  ), document.body);
 }
