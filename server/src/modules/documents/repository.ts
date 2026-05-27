@@ -66,6 +66,19 @@ export function createDocumentsRepository(database: Database.Database) {
     WHERE id = @id
   `);
 
+  const selectAllDocumentsStatement = database.prepare(`
+    SELECT
+      id,
+      title,
+      created_at,
+      updated_at,
+      created_by_name,
+      is_deleted
+    FROM documents
+    WHERE is_deleted = 0
+    ORDER BY updated_at DESC
+  `);
+
   return {
     createDocument(input: CreateDocumentInput) {
       const document: DocumentMeta = {
@@ -91,6 +104,10 @@ export function createDocumentsRepository(database: Database.Database) {
     getDocumentById(documentId: string) {
       const row = selectDocumentByIdStatement.get(documentId) as DocumentRow | undefined;
       return row ? mapDocumentRow(row) : null;
+    },
+    getAllDocuments() {
+      const rows = selectAllDocumentsStatement.all() as DocumentRow[];
+      return rows.map(mapDocumentRow);
     },
     updateDocumentMeta(documentId: string, title: string, updatedAt: string) {
       updateDocumentStatement.run({

@@ -33,6 +33,10 @@ function emptyState(docId: string, updatedAt: string): DocumentState {
 
 export function createDocumentService() {
   return {
+    getAllDocuments() {
+      const dataAccess = getDataAccess();
+      return dataAccess.documents.getAllDocuments();
+    },
     createDocument(name: string, title?: string) {
       const dataAccess = getDataAccess();
       const now = new Date().toISOString();

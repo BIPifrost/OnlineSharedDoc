@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createDocument, getDocumentDetail } from "../api";
 import {
   buildDocumentUrl,
@@ -105,6 +105,12 @@ export function HomePage() {
 
   return (
     <main className="home-shell">
+      <nav className="home-nav">
+        <Link to="/documents" className="nav-link">
+          📄 查看所有文档
+        </Link>
+      </nav>
+
       <section className="home-hero">
         <div className="home-hero__copy">
           <span className="home-kicker">匿名协作文档入口</span>

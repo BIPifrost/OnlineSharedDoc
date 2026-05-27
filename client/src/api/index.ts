@@ -1,4 +1,5 @@
 export {
+  getAllDocuments,
   createDocument,
   downloadDocumentExport,
   getDocumentChatMessages,

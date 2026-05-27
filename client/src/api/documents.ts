@@ -120,6 +120,17 @@ async function readBlobResponse(response: Response, fallbackMessage: string) {
   };
 }
 
+export async function getAllDocuments() {
+  try {
+    const response = await fetch("/api/documents");
+    return await readJson<DocumentSummary[]>(response);
+  } catch (error) {
+    throw new Error(
+      getReadableErrorMessage(error, "获取文档列表失败，请重试。")
+    );
+  }
+}
+
 export async function createDocument(name: string, title?: string) {
   const guestName = validateGuestName(name);
 
