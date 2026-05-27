@@ -11,6 +11,8 @@ coverage/
 .vite/
 client/node_modules/.vite/
 client/.task6-test-build/
+model/
+indexUI.md
 
 # Runtime data and local databases
 data/

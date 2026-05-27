@@ -26,6 +26,10 @@ const featureNotes = [
   }
 ] as const;
 
+const navLinks = ["产品", "解决方案", "开发者"] as const;
+
+const footerLinks = ["隐私政策", "服务条款", "GitHub", "联系我们"] as const;
+
 export function HomePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -104,98 +108,149 @@ export function HomePage() {
   }
 
   return (
-    <main className="home-shell">
-      <section className="home-hero">
-        <div className="home-hero__copy">
-          <span className="home-kicker">匿名协作文档入口</span>
-          <h1>{HOME_PAGE_TITLE}</h1>
-          <p>
-            这是多人共享文档实验系统的统一入口页。输入昵称后，你可以创建新的协作文档，
-            也可以凭已有文档编号直接加入同一份文档。
-          </p>
+    <div className="home-page">
+      <header className="home-topbar">
+        <div className="home-topbar__inner">
+          <div className="home-topbar__brand-group">
+            <a className="home-topbar__brand" href="/">
+              {HOME_PAGE_TITLE}
+            </a>
+
+            <nav className="home-topbar__nav" aria-label="首页导航">
+              {navLinks.map((link) => (
+                <a key={link} href="#" className="home-topbar__nav-link">
+                  {link}
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          <a className="home-topbar__cta" href="#home-entry-cards">
+            立即加入
+          </a>
         </div>
+      </header>
 
-        <div className="home-hero__panel">
-          <label className="field">
-            <span className="field__label">你的昵称</span>
-            <input
-              value={guestName}
-              onChange={(event) => {
-                const nextName = event.target.value;
-                setGuestName(nextName);
-                persistGuestName(nextName);
-              }}
-              placeholder="例如：张三"
-            />
-          </label>
+      <main className="home-shell">
+        <section className="home-hero">
+          <div className="home-hero__copy">
+            <h1>{HOME_PAGE_TITLE}</h1>
+            <p>
+              这是多人共享文档实验系统的统一入口页。输入昵称后，你可以创建新的协作文档，
+              也可以凭已有文档编号直接加入同一份文档。
+            </p>
+          </div>
+        </section>
 
-          <label className="field">
-            <span className="field__label">文档名称（可选）</span>
-            <input
-              value={docTitle}
-              onChange={(event) => {
-                setDocTitle(event.target.value);
-              }}
-              placeholder="例如：项目需求文档"
-            />
-          </label>
+        <section className="home-prismatic" aria-hidden="true">
+          <div className="home-prismatic__halo home-prismatic__halo--left" />
+          <div className="home-prismatic__halo home-prismatic__halo--center" />
+          <div className="home-prismatic__halo home-prismatic__halo--right" />
+          <div className="home-prismatic__copy">
+            <h2>免除登录，立即进入</h2>
+            <p>提供方便快捷的共享文档方案</p>
+          </div>
+        </section>
 
-          <div className="action-row">
+        <section className="home-entry-grid" id="home-entry-cards">
+          <article className="home-entry-card">
+            <h2>创建文档</h2>
+
+            <label className="field field--minimal">
+              <span className="field__label">你的昵称</span>
+              <input
+                value={guestName}
+                onChange={(event) => {
+                  const nextName = event.target.value;
+                  setGuestName(nextName);
+                  persistGuestName(nextName);
+                }}
+                placeholder="输入昵称"
+              />
+            </label>
+
+            <label className="field field--minimal">
+              <span className="field__label">文档名称 (可选)</span>
+              <input
+                value={docTitle}
+                onChange={(event) => {
+                  setDocTitle(event.target.value);
+                }}
+                placeholder="例如：项目需求文档"
+              />
+            </label>
+
             <button
               type="button"
-              className="primary-button"
+              className="home-entry-card__button home-entry-card__button--primary"
               onClick={handleCreate}
               disabled={isCreating || isJoining}
             >
               {isCreating ? "正在创建..." : "创建文档"}
             </button>
-          </div>
+          </article>
 
-          <div className="divider">
-            <span>或使用文档编号加入</span>
-          </div>
+          <article className="home-entry-card">
+            <h2>加入文档</h2>
 
-          <label className="field">
-            <span className="field__label">文档 ID</span>
-            <input
-              value={docIdInput}
-              onChange={(event) => {
-                setDocIdInput(event.target.value);
-              }}
-              placeholder="输入已有文档 ID"
-            />
-          </label>
+            <label className="field field--minimal">
+              <span className="field__label">文档 ID</span>
+              <input
+                value={docIdInput}
+                onChange={(event) => {
+                  setDocIdInput(event.target.value);
+                }}
+                placeholder="输入已有文档 ID"
+              />
+            </label>
 
-          <div className="action-row">
+            <div className="home-entry-card__spacer" />
+
             <button
               type="button"
-              className="secondary-button"
+              className="home-entry-card__button home-entry-card__button--secondary"
               onClick={handleJoin}
               disabled={isCreating || isJoining}
             >
               {isJoining ? "正在验证..." : "加入文档"}
             </button>
+          </article>
+        </section>
+
+        {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
+
+        <section className="home-notes">
+          <div className="home-notes__header">
+            <span className="home-notes__eyebrow">工作原理</span>
+            <h2>首页负责完成匿名进入闭环</h2>
           </div>
 
-          {errorMessage ? <p className="error-banner">{errorMessage}</p> : null}
-        </div>
-      </section>
+          <div className="home-notes__grid">
+            {featureNotes.map((note) => (
+              <article key={note.title} className="note-card">
+                <h3>{note.title}</h3>
+                <p>{note.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
 
-      <section className="home-notes">
-        <div className="home-notes__header">
-          <span className="home-kicker">工作原理</span>
-          <h2>首页负责完成匿名进入闭环</h2>
-        </div>
+      <footer className="home-footer">
+        <div className="home-footer__inner">
+          <div className="home-footer__brand">
+            © 2026 在线共享文档工作区. Built for speed.
+          </div>
 
-        <div className="home-notes__grid">
-          {featureNotes.map((note) => (
-            <article key={note.title} className="note-card">
-              <h3>{note.title}</h3>
-              <p>{note.description}</p>
-            </article>
-          ))}
+          <nav className="home-footer__nav" aria-label="页脚链接">
+            {footerLinks.map((link) => (
+              <a key={link} href="#" className="home-footer__link">
+                {link}
+              </a>
+            ))}
+          </nav>
         </div>
-      </section>
-    </main>
+      </footer>
+    </div>
   );
 }
