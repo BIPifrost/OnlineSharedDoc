@@ -1,4 +1,5 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useCallback, useRef } from "react";
 import { CollaborativeEditor } from "../features/document-editor";
 import { DocumentHistoryPanel } from "../features/document-history";
 import { DocumentSidebarLeft } from "../features/document-workspace/DocumentSidebarLeft";
@@ -7,9 +8,12 @@ import { MarkdownPreview } from "../features/document-workspace/MarkdownPreview"
 import { DocumentToolbar } from "../features/document-workspace/DocumentToolbar";
 import { ResizableSplitPane } from "../features/document-workspace/ResizableSplitPane";
 import { SidebarDrawer } from "../features/document-workspace/SidebarDrawer";
+import { HelpPanel } from "../features/document-workspace/HelpPanel";
+import { MediaLibraryPanel } from "../features/document-workspace/MediaLibraryPanel";
 import { formatDateTime } from "../features/document-workspace/status";
 import { useDocumentWorkspace } from "../features/document-workspace/useDocumentWorkspace";
 import { ExportPanel } from "../features/export-panel";
+import { useState } from "react";
 
 const FALLBACK_EDITOR_COLOR = "#0ea5e9";
 
@@ -17,6 +21,11 @@ export function DocumentEntryPage() {
   const { docId = "" } = useParams();
   const [searchParams] = useSearchParams();
   const workspace = useDocumentWorkspace(docId, searchParams.get("name"));
+  const [insertRequest, setInsertRequest] = useState<{ id: number; text: string } | null>(null);
+
+  // Ref to prevent stale closures in keyboard handler
+  const workspaceRef = useRef(workspace);
+  workspaceRef.current = workspace;
 
   const currentUser =
     workspace.presenceUsers.find((user) =>
@@ -38,6 +47,82 @@ export function DocumentEntryPage() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // Keyboard shortcut handler
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+    const modKey = isMac ? event.metaKey : event.ctrlKey;
+    const currentWorkspace = workspaceRef.current;
+
+    // Ctrl+S / Cmd+S: Save document
+    if (modKey && event.key === "s") {
+      event.preventDefault();
+      currentWorkspace.handleSave();
+      return;
+    }
+
+    // Ctrl+/ / Cmd+/: Toggle help panel
+    if (modKey && event.key === "/") {
+      event.preventDefault();
+      currentWorkspace.toggleHelpPanel();
+      return;
+    }
+
+    // Ctrl+B / Cmd+B: Toggle left panel
+    if (modKey && event.key === "b") {
+      event.preventDefault();
+      currentWorkspace.toggleLeftPanel();
+      return;
+    }
+
+    // Ctrl+P / Cmd+P: Toggle right panel
+    if (modKey && event.key === "p") {
+      event.preventDefault();
+      currentWorkspace.toggleRightPanel();
+      return;
+    }
+
+    // Ctrl+E / Cmd+E: Toggle export panel
+    if (modKey && event.key === "e") {
+      event.preventDefault();
+      currentWorkspace.handleExportClick();
+      return;
+    }
+
+    // F11: Toggle editor fullscreen
+    if (event.key === "F11" && !event.ctrlKey && !event.metaKey) {
+      event.preventDefault();
+      currentWorkspace.toggleEditorFullscreen();
+      return;
+    }
+
+    // Ctrl+F11 / Cmd+F11: Toggle preview fullscreen
+    if ((modKey) && event.key === "F11") {
+      event.preventDefault();
+      currentWorkspace.togglePreviewFullscreen();
+      return;
+    }
+  }, []);
+
+  // Register keyboard shortcut listener
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  // Determine which drawer is open and what content to show
+  const rightDrawerContent = (
+    <DocumentSidebarRight
+      chatMessages={workspace.chatMessages}
+      chatDraft={workspace.chatDraft}
+      canSendChat={workspace.canSendChat}
+      onChatDraftChange={workspace.handleChatDraftChange}
+      onChatSend={workspace.handleChatSend}
+      systemMessages={workspace.systemMessages}
+    />
+  );
+
   return (
     <main className="workspace-shell workspace-shell--immersive">
       <DocumentToolbar
@@ -57,6 +142,8 @@ export function DocumentEntryPage() {
         rightPanelOpen={workspace.rightPanelOpen}
         editorFullscreen={workspace.editorFullscreen}
         previewFullscreen={workspace.previewFullscreen}
+        helpPanelOpen={workspace.helpPanelOpen}
+        mediaPanelOpen={workspace.mediaPanelOpen}
         onSave={workspace.handleSave}
         onExportClick={workspace.handleExportClick}
         onHistoryClick={handleHistoryClick}
@@ -64,6 +151,8 @@ export function DocumentEntryPage() {
         onToggleRightPanel={workspace.toggleRightPanel}
         onToggleEditorFullscreen={workspace.toggleEditorFullscreen}
         onTogglePreviewFullscreen={workspace.togglePreviewFullscreen}
+        onToggleHelpPanel={workspace.toggleHelpPanel}
+        onToggleMediaPanel={workspace.toggleMediaPanel}
         onTitleUpdate={workspace.handleTitleUpdate}
       />
 
@@ -85,22 +174,30 @@ export function DocumentEntryPage() {
           />
         </SidebarDrawer>
 
-        {/* 右侧抽屉 - 聊天和系统消息 */}
+        {/* 右侧抽屉 - 聊天/系统消息 */}
         <SidebarDrawer
           isOpen={workspace.rightPanelOpen}
           position="right"
           onClose={workspace.toggleRightPanel}
           width="400px"
         >
-          <DocumentSidebarRight
-            chatMessages={workspace.chatMessages}
-            chatDraft={workspace.chatDraft}
-            canSendChat={workspace.canSendChat}
-            onChatDraftChange={workspace.handleChatDraftChange}
-            onChatSend={workspace.handleChatSend}
-            systemMessages={workspace.systemMessages}
-          />
+          {rightDrawerContent}
         </SidebarDrawer>
+
+        {/* 统一帮助面板（模态框） */}
+        <HelpPanel
+          isOpen={workspace.helpPanelOpen}
+          onClose={workspace.toggleHelpPanel}
+        />
+
+        <MediaLibraryPanel
+          isOpen={workspace.mediaPanelOpen}
+          guestName={workspace.guestName}
+          onClose={workspace.toggleMediaPanel}
+          onInsert={(text) => {
+            setInsertRequest({ id: Date.now(), text });
+          }}
+        />
 
         {/* 主编辑区 - 双栏沉浸式布局 */}
         <section className="workspace-main workspace-main--immersive">
@@ -155,6 +252,10 @@ export function DocumentEntryPage() {
                     onConnectionStatusChange={workspace.handleEditorConnectionChange}
                     onSyncStateChange={workspace.handleEditorSyncChange}
                     onContentChange={workspace.handleEditorContentChange}
+                    insertRequest={insertRequest}
+                    onInsertApplied={(id) => {
+                      setInsertRequest((current) => current?.id === id ? null : current);
+                    }}
                   />
                 </div>
               }

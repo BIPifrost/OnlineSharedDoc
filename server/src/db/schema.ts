@@ -49,6 +49,18 @@ const schemaStatements = [
       payload_json TEXT NOT NULL,
       created_at TEXT NOT NULL
     )
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS media_assets (
+      id TEXT PRIMARY KEY,
+      original_name TEXT NOT NULL,
+      media_type TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      storage_name TEXT NOT NULL,
+      uploaded_by_name TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )
   `
 ] as const;
 

@@ -1,4 +1,5 @@
 export {
+  getAllDocuments,
   createDocument,
   downloadDocumentExport,
   getDocumentChatMessages,
@@ -19,3 +20,5 @@ export type {
   ExportFormat,
   SaveDocumentResult
 } from "./documents";
+export { getMediaAssets, uploadMediaAsset } from "./media";
+export type { MediaAsset } from "./media";

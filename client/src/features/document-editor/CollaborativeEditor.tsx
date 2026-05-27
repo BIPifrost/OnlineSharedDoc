@@ -19,6 +19,8 @@ export type CollaborativeEditorProps = {
   onConnectionStatusChange?: (status: ConnectionStatus) => void;
   onSyncStateChange?: (isSynced: boolean) => void;
   onContentChange?: (content: string) => void;
+  insertRequest?: { id: number; text: string } | null;
+  onInsertApplied?: (id: number) => void;
 };
 
 function createColorLight(color: string) {
@@ -43,9 +45,12 @@ export function CollaborativeEditor({
   websocketPath = "/yjs",
   onConnectionStatusChange,
   onSyncStateChange,
-  onContentChange
+  onContentChange,
+  insertRequest,
+  onInsertApplied
 }: CollaborativeEditorProps) {
   const editorHostRef = useRef<HTMLDivElement | null>(null);
+  const editorViewRef = useRef<EditorView | null>(null);
   const connectionStatusCallbackRef = useRef(onConnectionStatusChange);
   const syncStateCallbackRef = useRef(onSyncStateChange);
   const contentChangeCallbackRef = useRef(onContentChange);
@@ -104,6 +109,7 @@ export function CollaborativeEditor({
       state,
       parent: hostElement
     });
+    editorViewRef.current = view;
 
     const handleStatus = (event: { status: ConnectionStatus }) => {
       startTransition(() => {
@@ -130,6 +136,7 @@ export function CollaborativeEditor({
       provider.destroy();
       undoManager.destroy();
       view.destroy();
+      editorViewRef.current = null;
       ydoc.destroy();
     };
   }, [
@@ -138,6 +145,23 @@ export function CollaborativeEditor({
     userName,
     websocketPath
   ]);
+
+  useEffect(() => {
+    const view = editorViewRef.current;
+    if (!view || !insertRequest) {
+      return;
+    }
+
+    const from = view.state.selection.main.head;
+    const prefix = from > 0 ? "\n\n" : "";
+    const insertedText = `${prefix}${insertRequest.text}\n\n`;
+    view.dispatch({
+      changes: { from, insert: insertedText },
+      selection: { anchor: from + insertedText.length }
+    });
+    view.focus();
+    onInsertApplied?.(insertRequest.id);
+  }, [insertRequest, onInsertApplied]);
 
   return (
     <section className={`collaborative-editor ${className ?? ""}`.trim()}>

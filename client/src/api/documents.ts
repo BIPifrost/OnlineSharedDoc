@@ -10,6 +10,7 @@ export type DocumentSummary = {
   id: string;
   title: string;
   createdByName: string;
+  createdAt?: string;
 };
 
 export type DocumentDetail = {
@@ -118,6 +119,17 @@ async function readBlobResponse(response: Response, fallbackMessage: string) {
     blob: await response.blob(),
     fileName: parseFileNameFromDisposition(response.headers.get("content-disposition"))
   };
+}
+
+export async function getAllDocuments() {
+  try {
+    const response = await fetch("/api/documents");
+    return await readJson<DocumentSummary[]>(response);
+  } catch (error) {
+    throw new Error(
+      getReadableErrorMessage(error, "获取文档列表失败，请重试。")
+    );
+  }
 }
 
 export async function createDocument(name: string, title?: string) {

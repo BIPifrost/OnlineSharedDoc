@@ -57,6 +57,17 @@ function buildContentDisposition(fileName: string, extension: string) {
 }
 
 export function registerDocumentRoutes(app: Express) {
+  app.get("/api/documents", (_request: Request, response: Response) => {
+    try {
+      const documents = documentService.getAllDocuments();
+      return sendSuccess(response, 200, documents);
+    } catch (error) {
+      return handleRouteError(response, error, {
+        path: "GET /api/documents"
+      });
+    }
+  });
+
   app.post("/api/documents", (request: Request, response: Response) => {
     try {
       const name = validateName(request.body?.name);
