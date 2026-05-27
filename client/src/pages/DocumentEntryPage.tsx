@@ -1,19 +1,19 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { useEffect, useCallback, useRef } from "react";
 import { CollaborativeEditor } from "../features/document-editor";
 import { DocumentHistoryPanel } from "../features/document-history";
 import { DocumentSidebarLeft } from "../features/document-workspace/DocumentSidebarLeft";
 import { DocumentSidebarRight } from "../features/document-workspace/DocumentSidebarRight";
-import { MarkdownPreview } from "../features/document-workspace/MarkdownPreview";
 import { DocumentToolbar } from "../features/document-workspace/DocumentToolbar";
+import { HelpPanel } from "../features/document-workspace/HelpPanel";
+import { ImportSnapshotModal } from "../features/document-workspace/ImportSnapshotModal";
+import { MarkdownPreview } from "../features/document-workspace/MarkdownPreview";
+import { MediaLibraryPanel } from "../features/document-workspace/MediaLibraryPanel";
 import { ResizableSplitPane } from "../features/document-workspace/ResizableSplitPane";
 import { SidebarDrawer } from "../features/document-workspace/SidebarDrawer";
-import { HelpPanel } from "../features/document-workspace/HelpPanel";
-import { MediaLibraryPanel } from "../features/document-workspace/MediaLibraryPanel";
 import { formatDateTime } from "../features/document-workspace/status";
 import { useDocumentWorkspace } from "../features/document-workspace/useDocumentWorkspace";
 import { ExportPanel } from "../features/export-panel";
-import { useState } from "react";
 
 const FALLBACK_EDITOR_COLOR = "#0ea5e9";
 
@@ -21,9 +21,11 @@ export function DocumentEntryPage() {
   const { docId = "" } = useParams();
   const [searchParams] = useSearchParams();
   const workspace = useDocumentWorkspace(docId, searchParams.get("name"));
-  const [insertRequest, setInsertRequest] = useState<{ id: number; text: string } | null>(null);
+  const [insertRequest, setInsertRequest] = useState<{
+    id: number;
+    text: string;
+  } | null>(null);
 
-  // Ref to prevent stale closures in keyboard handler
   const workspaceRef = useRef(workspace);
   workspaceRef.current = workspace;
 
@@ -37,9 +39,7 @@ export function DocumentEntryPage() {
   const editorUserColor = currentUser?.color ?? FALLBACK_EDITOR_COLOR;
   const toolbarTitle =
     workspace.detail?.title ??
-    (workspace.loadState === "loading"
-      ? "正在加载文档..."
-      : "文档工作区");
+    (workspace.loadState === "loading" ? "正在加载文档..." : "文档工作区");
 
   function handleHistoryClick() {
     document
@@ -47,63 +47,53 @@ export function DocumentEntryPage() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // Keyboard shortcut handler
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
     const modKey = isMac ? event.metaKey : event.ctrlKey;
     const currentWorkspace = workspaceRef.current;
 
-    // Ctrl+S / Cmd+S: Save document
     if (modKey && event.key === "s") {
       event.preventDefault();
       currentWorkspace.handleSave();
       return;
     }
 
-    // Ctrl+/ / Cmd+/: Toggle help panel
     if (modKey && event.key === "/") {
       event.preventDefault();
       currentWorkspace.toggleHelpPanel();
       return;
     }
 
-    // Ctrl+B / Cmd+B: Toggle left panel
     if (modKey && event.key === "b") {
       event.preventDefault();
       currentWorkspace.toggleLeftPanel();
       return;
     }
 
-    // Ctrl+P / Cmd+P: Toggle right panel
     if (modKey && event.key === "p") {
       event.preventDefault();
       currentWorkspace.toggleRightPanel();
       return;
     }
 
-    // Ctrl+E / Cmd+E: Toggle export panel
     if (modKey && event.key === "e") {
       event.preventDefault();
       currentWorkspace.handleExportClick();
       return;
     }
 
-    // F11: Toggle editor fullscreen
     if (event.key === "F11" && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       currentWorkspace.toggleEditorFullscreen();
       return;
     }
 
-    // Ctrl+F11 / Cmd+F11: Toggle preview fullscreen
-    if ((modKey) && event.key === "F11") {
+    if (modKey && event.key === "F11") {
       event.preventDefault();
       currentWorkspace.togglePreviewFullscreen();
-      return;
     }
   }, []);
 
-  // Register keyboard shortcut listener
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -111,7 +101,6 @@ export function DocumentEntryPage() {
     };
   }, [handleKeyDown]);
 
-  // Determine which drawer is open and what content to show
   const rightDrawerContent = (
     <DocumentSidebarRight
       chatMessages={workspace.chatMessages}
@@ -146,6 +135,7 @@ export function DocumentEntryPage() {
         mediaPanelOpen={workspace.mediaPanelOpen}
         onSave={workspace.handleSave}
         onExportClick={workspace.handleExportClick}
+        onImportClick={workspace.openImportModal}
         onHistoryClick={handleHistoryClick}
         onToggleLeftPanel={workspace.toggleLeftPanel}
         onToggleRightPanel={workspace.toggleRightPanel}
@@ -157,7 +147,6 @@ export function DocumentEntryPage() {
       />
 
       <section className="workspace-layout workspace-layout--immersive">
-        {/* 左侧抽屉 - 协作者和快照 */}
         <SidebarDrawer
           isOpen={workspace.leftPanelOpen}
           position="left"
@@ -174,7 +163,6 @@ export function DocumentEntryPage() {
           />
         </SidebarDrawer>
 
-        {/* 右侧抽屉 - 聊天/系统消息 */}
         <SidebarDrawer
           isOpen={workspace.rightPanelOpen}
           position="right"
@@ -184,7 +172,6 @@ export function DocumentEntryPage() {
           {rightDrawerContent}
         </SidebarDrawer>
 
-        {/* 统一帮助面板（模态框） */}
         <HelpPanel
           isOpen={workspace.helpPanelOpen}
           onClose={workspace.toggleHelpPanel}
@@ -201,7 +188,23 @@ export function DocumentEntryPage() {
           }}
         />
 
-        {/* 主编辑区 - 双栏沉浸式布局 */}
+        <ImportSnapshotModal
+          isOpen={workspace.isImportModalOpen}
+          listState={workspace.importListState}
+          listError={workspace.importListError}
+          snapshots={workspace.importSnapshots}
+          selectedSnapshotId={workspace.selectedImportSnapshotId}
+          selectedSnapshotDetail={workspace.selectedImportSnapshotDetail}
+          detailState={workspace.importDetailState}
+          detailError={workspace.importDetailError}
+          isConfirmingOverwrite={workspace.isImportConfirmOpen}
+          onClose={workspace.closeImportModal}
+          onSelectSnapshot={workspace.selectImportSnapshot}
+          onRequestImport={workspace.requestImportSnapshot}
+          onConfirmImport={workspace.confirmImportSnapshot}
+          onCancelConfirm={workspace.cancelImportConfirmation}
+        />
+
         <section className="workspace-main workspace-main--immersive">
           {workspace.loadState === "loading" ? (
             <div className="workspace-feedback">
@@ -236,7 +239,7 @@ export function DocumentEntryPage() {
                         onClick={workspace.toggleEditorFullscreen}
                         title={workspace.editorFullscreen ? "退出全屏" : "全屏显示"}
                       >
-                        {workspace.editorFullscreen ? "⊡" : "⊞"}
+                        {workspace.editorFullscreen ? "◱" : "◰"}
                       </button>
                     </div>
                   </div>
@@ -256,8 +259,12 @@ export function DocumentEntryPage() {
                     onContentChange={workspace.handleEditorContentChange}
                     insertRequest={insertRequest}
                     onInsertApplied={(id) => {
-                      setInsertRequest((current) => current?.id === id ? null : current);
+                      setInsertRequest((current) =>
+                        current?.id === id ? null : current
+                      );
                     }}
+                    replaceRequest={workspace.replaceRequest}
+                    onReplaceApplied={workspace.handleReplaceApplied}
                   />
                 </div>
               }
@@ -275,7 +282,7 @@ export function DocumentEntryPage() {
                         onClick={workspace.togglePreviewFullscreen}
                         title={workspace.previewFullscreen ? "退出全屏" : "全屏显示"}
                       >
-                        {workspace.previewFullscreen ? "⊡" : "⊞"}
+                        {workspace.previewFullscreen ? "◱" : "◰"}
                       </button>
                     </div>
                   </div>
@@ -289,7 +296,6 @@ export function DocumentEntryPage() {
             />
           ) : null}
 
-          {/* 导出面板和历史面板保持原位 */}
           <ExportPanel
             isOpen={workspace.isExportPanelOpen}
             exportingFormat={workspace.exportingFormat}

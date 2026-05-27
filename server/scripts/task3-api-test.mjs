@@ -118,6 +118,27 @@ try {
   assert.equal(snapshotsResponse.status, 200);
   assert.equal(snapshotsResponse.body.data.length, 2);
 
+  const globalSnapshotsResponse = await request("/api/snapshots");
+  assert.equal(globalSnapshotsResponse.status, 200);
+  assert.equal(globalSnapshotsResponse.body.success, true);
+  assert.ok(Array.isArray(globalSnapshotsResponse.body.data));
+  assert.ok(globalSnapshotsResponse.body.data.length >= 2);
+  assert.ok(
+    globalSnapshotsResponse.body.data[0].savedAt >=
+      globalSnapshotsResponse.body.data[1].savedAt
+  );
+
+  const globalSnapshotId = globalSnapshotsResponse.body.data[0].id;
+  const globalSnapshotDetail = await request(`/api/snapshots/${globalSnapshotId}`);
+  assert.equal(globalSnapshotDetail.status, 200);
+  assert.equal(globalSnapshotDetail.body.success, true);
+  assert.equal(globalSnapshotDetail.body.data.id, globalSnapshotId);
+  assert.ok(typeof globalSnapshotDetail.body.data.content === "string");
+
+  const missingGlobalSnapshot = await request("/api/snapshots/999999");
+  assert.equal(missingGlobalSnapshot.status, 404);
+  assert.equal(missingGlobalSnapshot.body.success, false);
+
   const latestSnapshotId = snapshotsResponse.body.data[0].id;
   const olderSnapshotId = snapshotsResponse.body.data[1].id;
 

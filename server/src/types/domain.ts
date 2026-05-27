@@ -102,6 +102,16 @@ export type DocumentSnapshot = {
   savedAt: string;
 };
 
+export type DocumentSnapshotSummary = {
+  id: number;
+  docId: string;
+  snapshotVersion: number;
+  title: string;
+  savedByName: string;
+  savedAt: string;
+  contentPreview: string;
+};
+
 export type ChatMessage = {
   id: number;
   docId: string;

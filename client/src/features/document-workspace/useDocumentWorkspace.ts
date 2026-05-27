@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import {
   downloadDocumentExport,
+  getAllImportSnapshots,
   getDocumentChatMessages,
   getDocumentDetail,
   getDocumentDiff,
+  getImportSnapshotDetail,
   getDocumentSnapshotDetail,
   getDocumentSnapshots,
   saveDocumentSnapshot,
@@ -14,7 +16,8 @@ import {
   type DocumentDiffResult,
   type DocumentSnapshotDetail,
   type DocumentSnapshotSummary,
-  type ExportFormat
+  type ExportFormat,
+  type ImportSnapshotSummary
 } from "../../api";
 import { getRealtimeServerHttpOrigin } from "../../app/runtime-origin";
 import {
@@ -213,6 +216,21 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
   const [isExportPanelOpen, setIsExportPanelOpen] = useState(false);
   const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
   const [exportError, setExportError] = useState("");
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importListState, setImportListState] =
+    useState<WorkspaceAsyncState>("idle");
+  const [importListError, setImportListError] = useState("");
+  const [importSnapshots, setImportSnapshots] = useState<ImportSnapshotSummary[]>([]);
+  const [selectedImportSnapshotId, setSelectedImportSnapshotId] =
+    useState<number | null>(null);
+  const [selectedImportSnapshotDetail, setSelectedImportSnapshotDetail] =
+    useState<DocumentSnapshotDetail | null>(null);
+  const [importDetailState, setImportDetailState] =
+    useState<WorkspaceAsyncState>("idle");
+  const [importDetailError, setImportDetailError] = useState("");
+  const [replaceRequest, setReplaceRequest] =
+    useState<{ id: number; text: string } | null>(null);
+  const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatDraft, setChatDraft] = useState("");
   const [systemMessages, setSystemMessages] = useState<WorkspaceSystemMessage[]>([]);
@@ -229,6 +247,8 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
   const lastSavedContentRef = useRef("");
   const lastLocalSavedVersionRef = useRef<number | null>(null);
   const lastSyncStateRef = useRef(false);
+  const pendingImportRef = useRef(false);
+  const importedDirtyRef = useRef(false);
   const socketRef = useRef<
     Socket<SocketServerToClientEvents, SocketClientToServerEvents> | null
   >(null);
@@ -274,6 +294,16 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     setIsExportPanelOpen(false);
     setExportingFormat(null);
     setExportError("");
+    setIsImportModalOpen(false);
+    setImportListState("idle");
+    setImportListError("");
+    setImportSnapshots([]);
+    setSelectedImportSnapshotId(null);
+    setSelectedImportSnapshotDetail(null);
+    setImportDetailState("idle");
+    setImportDetailError("");
+    setReplaceRequest(null);
+    setIsImportConfirmOpen(false);
     setChatMessages([]);
     setChatDraft("");
     setSystemMessages([]);
@@ -288,6 +318,8 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     lastSavedContentRef.current = "";
     lastLocalSavedVersionRef.current = null;
     lastSyncStateRef.current = false;
+    pendingImportRef.current = false;
+    importedDirtyRef.current = false;
 
     Promise.all([
       getDocumentDetail(docId),
@@ -426,6 +458,8 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
       });
 
       lastSavedContentRef.current = contentRef.current;
+      pendingImportRef.current = false;
+      importedDirtyRef.current = false;
       setSaveStatus("saved");
       setDetail((previous) =>
         previous
@@ -575,6 +609,8 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
 
       lastSavedContentRef.current = contentRef.current;
       lastLocalSavedVersionRef.current = result.snapshotVersion;
+      pendingImportRef.current = false;
+      importedDirtyRef.current = false;
       setDetail((previous) =>
         previous
           ? {
@@ -628,6 +664,96 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
   function handleExportClick() {
     setIsExportPanelOpen((previous) => !previous);
     setExportError("");
+  }
+
+  async function openImportModal() {
+    setIsImportModalOpen(true);
+    setImportListState("loading");
+    setImportListError("");
+    setSelectedImportSnapshotId(null);
+    setSelectedImportSnapshotDetail(null);
+    setImportDetailState("idle");
+    setImportDetailError("");
+    setIsImportConfirmOpen(false);
+
+    try {
+      const result = await getAllImportSnapshots();
+      setImportSnapshots(result);
+      setImportListState("ready");
+    } catch (error) {
+      setImportListState("error");
+      setImportListError(
+        getReadableErrorMessage(error, "Failed to load import snapshots.")
+      );
+    }
+  }
+
+  function closeImportModal() {
+    setIsImportModalOpen(false);
+    setSelectedImportSnapshotId(null);
+    setSelectedImportSnapshotDetail(null);
+    setImportDetailState("idle");
+    setImportDetailError("");
+    setIsImportConfirmOpen(false);
+  }
+
+  async function selectImportSnapshot(snapshotId: number) {
+    setSelectedImportSnapshotId(snapshotId);
+    setSelectedImportSnapshotDetail(null);
+    setImportDetailState("loading");
+    setImportDetailError("");
+    setIsImportConfirmOpen(false);
+
+    try {
+      const result = await getImportSnapshotDetail(snapshotId);
+      setSelectedImportSnapshotDetail(result);
+      setImportDetailState("ready");
+    } catch (error) {
+      setImportDetailState("error");
+      setImportDetailError(
+        getReadableErrorMessage(error, "Failed to load snapshot detail.")
+      );
+    }
+  }
+
+  function requestImportSnapshot() {
+    if (!selectedImportSnapshotDetail) {
+      return;
+    }
+
+    if (editorContent !== lastSavedContentRef.current) {
+      setIsImportConfirmOpen(true);
+      return;
+    }
+
+    pendingImportRef.current = true;
+    setReplaceRequest({
+      id: Date.now(),
+      text: selectedImportSnapshotDetail.content
+    });
+  }
+
+  function confirmImportSnapshot() {
+    if (!selectedImportSnapshotDetail) {
+      return;
+    }
+
+    setIsImportConfirmOpen(false);
+    pendingImportRef.current = true;
+    setReplaceRequest({
+      id: Date.now(),
+      text: selectedImportSnapshotDetail.content
+    });
+  }
+
+  function cancelImportConfirmation() {
+    setIsImportConfirmOpen(false);
+  }
+
+  function handleReplaceApplied(id: number) {
+    importedDirtyRef.current = true;
+    setReplaceRequest((current) => (current?.id === id ? null : current));
+    closeImportModal();
   }
 
   async function handleExportDownload(format: ExportFormat, exportFileName?: string) {
@@ -697,6 +823,18 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     contentRef.current = nextContent;
 
     if (loadState !== "ready") {
+      return;
+    }
+
+    if (pendingImportRef.current) {
+      pendingImportRef.current = false;
+      importedDirtyRef.current = true;
+      setSaveStatus("unsaved");
+      return;
+    }
+
+    if (importedDirtyRef.current) {
+      setSaveStatus("unsaved");
       return;
     }
 
@@ -848,6 +986,16 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     isExportPanelOpen,
     exportingFormat,
     exportError,
+    isImportModalOpen,
+    importListState,
+    importListError,
+    importSnapshots,
+    selectedImportSnapshotId,
+    selectedImportSnapshotDetail,
+    importDetailState,
+    importDetailError,
+    replaceRequest,
+    isImportConfirmOpen,
     chatMessages,
     chatDraft,
     systemMessages,
@@ -882,6 +1030,13 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     handleChatSend,
     handleExportClick,
     handleExportDownload,
+    openImportModal,
+    closeImportModal,
+    selectImportSnapshot,
+    requestImportSnapshot,
+    confirmImportSnapshot,
+    cancelImportConfirmation,
+    handleReplaceApplied,
     handleSave,
     handleSnapshotToggle,
     handleClearSnapshotSelection,

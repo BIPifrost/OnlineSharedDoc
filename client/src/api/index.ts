@@ -1,10 +1,12 @@
 export {
   getAllDocuments,
+  getAllImportSnapshots,
   createDocument,
   downloadDocumentExport,
   getDocumentChatMessages,
   getDocumentDetail,
   getDocumentDiff,
+  getImportSnapshotDetail,
   getDocumentSnapshotDetail,
   getDocumentSnapshots,
   saveDocumentSnapshot,
@@ -18,6 +20,7 @@ export type {
   DocumentSnapshotSummary,
   DocumentSummary,
   ExportFormat,
+  ImportSnapshotSummary,
   SaveDocumentResult
 } from "./documents";
 export { deleteMediaAsset, getMediaAssets, uploadMediaAsset } from "./media";

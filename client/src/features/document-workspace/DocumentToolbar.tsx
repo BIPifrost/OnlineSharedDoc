@@ -23,6 +23,7 @@ type DocumentToolbarProps = {
   mediaPanelOpen: boolean;
   onSave: () => void;
   onExportClick: () => void;
+  onImportClick: () => void;
   onHistoryClick: () => void;
   onToggleLeftPanel: () => void;
   onToggleRightPanel: () => void;
@@ -44,17 +45,16 @@ export function DocumentToolbar({
   isExportPanelOpen,
   leftPanelOpen,
   rightPanelOpen,
-  editorFullscreen: _editorFullscreen,
-  previewFullscreen: _previewFullscreen,
+  editorFullscreen: editorFullscreenHidden,
+  previewFullscreen: previewFullscreenHidden,
   helpPanelOpen,
   mediaPanelOpen,
   onSave,
   onExportClick,
+  onImportClick,
   onHistoryClick,
   onToggleLeftPanel,
   onToggleRightPanel,
-  onToggleEditorFullscreen: _onToggleEditorFullscreen,
-  onTogglePreviewFullscreen: _onTogglePreviewFullscreen,
   onToggleHelpPanel,
   onToggleMediaPanel,
   onTitleUpdate
@@ -105,7 +105,7 @@ export function DocumentToolbar({
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <input
                 value={editingTitle}
-                onChange={(e) => setEditingTitle(e.target.value)}
+                onChange={(event) => setEditingTitle(event.target.value)}
                 onKeyDown={handleTitleKeyDown}
                 onBlur={handleTitleSubmit}
                 autoFocus
@@ -122,7 +122,9 @@ export function DocumentToolbar({
           ) : (
             <h1
               onClick={() => {
-                if (disabled) return;
+                if (disabled) {
+                  return;
+                }
                 setEditingTitle(title);
                 setIsEditingTitle(true);
               }}
@@ -132,13 +134,13 @@ export function DocumentToolbar({
                 borderRadius: "4px",
                 transition: "background-color 0.2s"
               }}
-              onMouseEnter={(e) => {
+              onMouseEnter={(event) => {
                 if (!disabled) {
-                  e.currentTarget.style.backgroundColor = "#f0f9ff";
+                  event.currentTarget.style.backgroundColor = "#f0f9ff";
                 }
               }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
+              onMouseLeave={(event) => {
+                event.currentTarget.style.backgroundColor = "transparent";
               }}
               title={disabled ? undefined : "点击修改文档标题"}
             >
@@ -173,7 +175,7 @@ export function DocumentToolbar({
               zIndex: 1000
             }}
           >
-            已复制！
+            已复制
           </span>
         </p>
       </div>
@@ -181,13 +183,13 @@ export function DocumentToolbar({
       <div className="workspace-toolbar__status-row">
         <span
           className={`status-pill status-pill--${connectionMeta.tone}`}
-          aria-label={`连接状态: ${connectionMeta.label}`}
+          aria-label={`连接状态 ${connectionMeta.label}`}
         >
           连接 · {connectionMeta.label}
         </span>
         <span
           className={`status-pill status-pill--${saveMeta.tone}`}
-          aria-label={`保存状态: ${saveMeta.label}`}
+          aria-label={`保存状态 ${saveMeta.label}`}
         >
           保存 · {saveMeta.label}
         </span>
@@ -204,7 +206,7 @@ export function DocumentToolbar({
           type="button"
           className={`toolbar-button${leftPanelOpen ? " toolbar-button--active" : ""}`}
           onClick={onToggleLeftPanel}
-          disabled={disabled || _editorFullscreen || _previewFullscreen}
+          disabled={disabled || editorFullscreenHidden || previewFullscreenHidden}
           title="协作者和快照列表"
         >
           {leftPanelOpen ? "隐藏侧边栏" : "显示侧边栏"}
@@ -213,7 +215,7 @@ export function DocumentToolbar({
           type="button"
           className={`toolbar-button${rightPanelOpen ? " toolbar-button--active" : ""}`}
           onClick={onToggleRightPanel}
-          disabled={disabled || _editorFullscreen || _previewFullscreen}
+          disabled={disabled || editorFullscreenHidden || previewFullscreenHidden}
           title="聊天和系统消息"
         >
           {rightPanelOpen ? "隐藏面板" : "显示面板"}
@@ -247,7 +249,9 @@ export function DocumentToolbar({
         </button>
         <button
           type="button"
-          className={`toolbar-button${isExportPanelOpen ? " toolbar-button--active" : ""}`}
+          className={`toolbar-button toolbar-button--primary${
+            isExportPanelOpen ? " toolbar-button--active" : ""
+          }`}
           onClick={onExportClick}
           disabled={disabled}
         >
@@ -255,7 +259,15 @@ export function DocumentToolbar({
         </button>
         <button
           type="button"
-          className="toolbar-button"
+          className="toolbar-button toolbar-button--primary"
+          onClick={onImportClick}
+          disabled={disabled}
+        >
+          导入
+        </button>
+        <button
+          type="button"
+          className="toolbar-button toolbar-button--primary"
           onClick={onHistoryClick}
           disabled={disabled}
         >

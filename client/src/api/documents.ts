@@ -32,6 +32,16 @@ export type DocumentSnapshotSummary = {
   savedAt: string;
 };
 
+export type ImportSnapshotSummary = {
+  id: number;
+  docId: string;
+  snapshotVersion: number;
+  title: string;
+  savedByName: string;
+  savedAt: string;
+  contentPreview: string;
+};
+
 export type DocumentSnapshotDetail = {
   id: number;
   docId: string;
@@ -216,6 +226,16 @@ export async function getDocumentChatMessages(docId: string) {
   );
 
   return await readJson<ChatMessage[]>(response);
+}
+
+export async function getAllImportSnapshots() {
+  const response = await fetch("/api/snapshots");
+  return await readJson<ImportSnapshotSummary[]>(response);
+}
+
+export async function getImportSnapshotDetail(snapshotId: number) {
+  const response = await fetch(`/api/snapshots/${snapshotId}`);
+  return await readJson<DocumentSnapshotDetail>(response);
 }
 
 export async function saveDocumentSnapshot(input: {

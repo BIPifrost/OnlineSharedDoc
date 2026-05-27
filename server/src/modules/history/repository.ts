@@ -1,5 +1,8 @@
 import type Database from "better-sqlite3";
-import type { DocumentSnapshot } from "../../types/domain.js";
+import type {
+  DocumentSnapshot,
+  DocumentSnapshotSummary
+} from "../../types/domain.js";
 
 type DocumentSnapshotRow = {
   id: number;
@@ -20,6 +23,8 @@ export type CreateDocumentSnapshotInput = {
   savedAt: string;
 };
 
+const SNAPSHOT_PREVIEW_LENGTH = 180;
+
 function mapSnapshotRow(row: DocumentSnapshotRow): DocumentSnapshot {
   return {
     id: row.id,
@@ -30,6 +35,13 @@ function mapSnapshotRow(row: DocumentSnapshotRow): DocumentSnapshot {
     savedByName: row.saved_by_name,
     savedAt: row.saved_at
   };
+}
+
+function buildContentPreview(content: string) {
+  const normalized = content.replace(/\s+/g, " ").trim();
+  return normalized.length <= SNAPSHOT_PREVIEW_LENGTH
+    ? normalized
+    : `${normalized.slice(0, SNAPSHOT_PREVIEW_LENGTH)}...`;
 }
 
 export function createHistoryRepository(database: Database.Database) {
@@ -78,6 +90,32 @@ export function createHistoryRepository(database: Database.Database) {
     WHERE doc_id = ? AND id = ?
   `);
 
+  const selectAllSnapshotsStatement = database.prepare(`
+    SELECT
+      id,
+      doc_id,
+      snapshot_version,
+      title,
+      content,
+      saved_by_name,
+      saved_at
+    FROM document_snapshots
+    ORDER BY saved_at DESC, id DESC
+  `);
+
+  const selectGlobalSnapshotByIdStatement = database.prepare(`
+    SELECT
+      id,
+      doc_id,
+      snapshot_version,
+      title,
+      content,
+      saved_by_name,
+      saved_at
+    FROM document_snapshots
+    WHERE id = ?
+  `);
+
   const selectLatestSnapshotVersionStatement = database.prepare(`
     SELECT COALESCE(MAX(snapshot_version), 0) AS snapshot_version
     FROM document_snapshots
@@ -106,6 +144,25 @@ export function createHistoryRepository(database: Database.Database) {
         documentId,
         snapshotId
       ) as DocumentSnapshotRow | undefined;
+
+      return row ? mapSnapshotRow(row) : null;
+    },
+    getAllSnapshots() {
+      const rows = selectAllSnapshotsStatement.all() as DocumentSnapshotRow[];
+      return rows.map((row) => ({
+        id: row.id,
+        docId: row.doc_id,
+        snapshotVersion: row.snapshot_version,
+        title: row.title,
+        savedByName: row.saved_by_name,
+        savedAt: row.saved_at,
+        contentPreview: buildContentPreview(row.content)
+      })) satisfies DocumentSnapshotSummary[];
+    },
+    getSnapshotByGlobalId(snapshotId: number) {
+      const row = selectGlobalSnapshotByIdStatement.get(snapshotId) as
+        | DocumentSnapshotRow
+        | undefined;
 
       return row ? mapSnapshotRow(row) : null;
     },
