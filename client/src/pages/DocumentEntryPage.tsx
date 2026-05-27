@@ -192,7 +192,9 @@ export function DocumentEntryPage() {
 
         <MediaLibraryPanel
           isOpen={workspace.mediaPanelOpen}
+          docId={workspace.docId}
           guestName={workspace.guestName}
+          canDeleteAssets={workspace.detail?.createdByName === workspace.guestName}
           onClose={workspace.toggleMediaPanel}
           onInsert={(text) => {
             setInsertRequest({ id: Date.now(), text });

@@ -73,6 +73,10 @@ export function createMediaAssetsRepository(database: Database.Database) {
     FROM media_assets
     ORDER BY created_at DESC
   `);
+  const deleteAssetStatement = database.prepare(`
+    DELETE FROM media_assets
+    WHERE id = ?
+  `);
 
   return {
     createAsset(asset: MediaAsset) {
@@ -86,6 +90,9 @@ export function createMediaAssetsRepository(database: Database.Database) {
     getAssets() {
       const rows = selectAssetsStatement.all() as MediaAssetRow[];
       return rows.map(mapMediaAssetRow);
+    },
+    deleteAsset(assetId: string) {
+      deleteAssetStatement.run(assetId);
     }
   };
 }

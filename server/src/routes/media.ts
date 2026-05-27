@@ -1,4 +1,4 @@
-import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, mkdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import express, { type Express, type Request, type Response } from "express";
@@ -148,6 +148,39 @@ export function registerMediaRoutes(app: Express) {
       return createReadStream(filePath, { start, end }).pipe(response);
     } catch (error) {
       return handleMediaError(response, error, "GET /api/media/:assetId/content");
+    }
+  });
+
+  app.delete("/api/media/:assetId", (request: Request, response: Response) => {
+    try {
+      const assetId = requireText(request.params.assetId, "assetId");
+      const docId = requireText(request.query.docId, "docId");
+      const requestedBy = validateName(request.query.requestedBy);
+      const dataAccess = getDataAccess();
+      const document = dataAccess.documents.getDocumentById(docId);
+
+      if (!document || document.isDeleted) {
+        throw new HttpError(404, "Document not found.");
+      }
+
+      if (document.createdByName !== requestedBy) {
+        throw new HttpError(403, "Only the document creator can delete resources.");
+      }
+
+      const asset = dataAccess.mediaAssets.getAssetById(assetId);
+      if (!asset) {
+        throw new HttpError(404, "Media asset not found.");
+      }
+
+      const filePath = path.join(UPLOAD_DIRECTORY, asset.storageName);
+      if (existsSync(filePath)) {
+        unlinkSync(filePath);
+      }
+      dataAccess.mediaAssets.deleteAsset(asset.id);
+
+      return sendSuccess(response, 200, { id: asset.id });
+    } catch (error) {
+      return handleMediaError(response, error, "DELETE /api/media/:assetId");
     }
   });
 }

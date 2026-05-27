@@ -7,20 +7,40 @@ type MarkdownPreviewProps = {
 
 type PreviewSegment =
   | { type: "markdown"; content: string }
-  | { type: "video"; label: string; url: string };
+  | { type: "video"; label: string; url: string; width: number }
+  | { type: "image"; label: string; url: string; width: number };
+
+function clampMediaWidth(width: number) {
+  return Math.max(160, Math.min(1200, width));
+}
 
 function splitPreviewContent(content: string): PreviewSegment[] {
   const segments: PreviewSegment[] = [];
-  const videoPattern = /!video\[([^\]]*)\]\(([^)\s]+)\)/g;
+  const mediaPattern =
+    /!video\[([^\]]*)\]\(([^)\s]+)\)(?:\{width=(\d{2,4})\})?|!image\[([^\]]*)\]\(([^)\s]+)\)\{width=(\d{2,4})\}/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = videoPattern.exec(content)) !== null) {
+  while ((match = mediaPattern.exec(content)) !== null) {
     if (match.index > lastIndex) {
       segments.push({ type: "markdown", content: content.slice(lastIndex, match.index) });
     }
-    segments.push({ type: "video", label: match[1] || "视频", url: match[2] });
-    lastIndex = videoPattern.lastIndex;
+    if (match[1] !== undefined) {
+      segments.push({
+        type: "video",
+        label: match[1] || "视频",
+        url: match[2],
+        width: clampMediaWidth(Number(match[3] || 720))
+      });
+    } else {
+      segments.push({
+        type: "image",
+        label: match[4] || "图片",
+        url: match[5],
+        width: clampMediaWidth(Number(match[6]))
+      });
+    }
+    lastIndex = mediaPattern.lastIndex;
   }
 
   if (lastIndex < content.length) {
@@ -28,6 +48,17 @@ function splitPreviewContent(content: string): PreviewSegment[] {
   }
 
   return segments.length > 0 ? segments : [{ type: "markdown", content }];
+}
+
+function SizedImage({ segment }: { segment: Extract<PreviewSegment, { type: "image" }> }) {
+  return (
+    <figure
+      className="markdown-preview__figure markdown-preview__sized-image"
+      style={{ width: `min(100%, ${segment.width}px)` }}
+    >
+      <img src={segment.url} className="markdown-preview__image" alt={segment.label} />
+    </figure>
+  );
 }
 
 export function MarkdownPreview({ content }: MarkdownPreviewProps) {
@@ -45,12 +76,18 @@ export function MarkdownPreview({ content }: MarkdownPreviewProps) {
       <div className="markdown-preview__content">
         {splitPreviewContent(content).map((segment, index) =>
           segment.type === "video" ? (
-            <figure key={`video-${index}`} className="markdown-preview__figure markdown-preview__video">
+            <figure
+              key={`video-${index}`}
+              className="markdown-preview__figure markdown-preview__video"
+              style={{ width: `min(100%, ${segment.width}px)` }}
+            >
               <video src={segment.url} controls preload="metadata">
                 当前浏览器不支持视频播放。
               </video>
               <figcaption className="markdown-preview__figcaption">{segment.label}</figcaption>
             </figure>
+          ) : segment.type === "image" ? (
+            <SizedImage key={`image-${segment.url}-${index}`} segment={segment} />
           ) : (
         <ReactMarkdown
           key={`markdown-${index}`}

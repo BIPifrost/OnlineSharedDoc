@@ -50,3 +50,13 @@ export async function uploadMediaAsset(file: File, uploadedByName: string) {
     throw new Error(getReadableErrorMessage(error, "媒体上传失败，请重试。"));
   }
 }
+
+export async function deleteMediaAsset(assetId: string, docId: string, requestedByName: string) {
+  const name = validateGuestName(requestedByName);
+  const response = await fetch(
+    `/api/media/${encodeURIComponent(assetId)}?docId=${encodeURIComponent(docId)}&requestedBy=${encodeURIComponent(name)}`,
+    { method: "DELETE" }
+  );
+
+  return readJson<{ id: string }>(response);
+}

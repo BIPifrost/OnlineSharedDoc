@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import {
+  deleteMediaAsset,
   getMediaAssets,
   uploadMediaAsset,
   type MediaAsset
@@ -7,7 +8,9 @@ import {
 
 type MediaLibraryPanelProps = {
   isOpen: boolean;
+  docId: string;
   guestName: string;
+  canDeleteAssets: boolean;
   onClose: () => void;
   onInsert: (snippet: string) => void;
 };
@@ -23,22 +26,26 @@ function escapeLabel(value: string) {
   return value.replace(/[\[\]]/g, "");
 }
 
-function buildMediaSnippet(asset: MediaAsset) {
+function buildMediaSnippet(asset: MediaAsset, mediaWidth: number) {
   const label = escapeLabel(asset.originalName);
   return asset.mediaType === "image"
-    ? `![${label}](${asset.url})`
-    : `!video[${label}](${asset.url})`;
+    ? `!image[${label}](${asset.url}){width=${mediaWidth}}`
+    : `!video[${label}](${asset.url}){width=${mediaWidth}}`;
 }
 
 export function MediaLibraryPanel({
   isOpen,
+  docId,
   guestName,
+  canDeleteAssets,
   onClose,
   onInsert
 }: MediaLibraryPanelProps) {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [deletingAssetId, setDeletingAssetId] = useState<string | null>(null);
+  const [mediaWidth, setMediaWidth] = useState(520);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -94,6 +101,27 @@ export function MediaLibraryPanel({
     }
   }
 
+  async function handleDelete(asset: MediaAsset) {
+    if (!canDeleteAssets) {
+      return;
+    }
+
+    if (!window.confirm("删除后，已插入该资源的文档将无法继续显示它。确定删除吗？")) {
+      return;
+    }
+
+    setDeletingAssetId(asset.id);
+    setError("");
+    try {
+      await deleteMediaAsset(asset.id, docId, guestName);
+      setAssets((previous) => previous.filter((item) => item.id !== asset.id));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "删除资源失败，请重试。");
+    } finally {
+      setDeletingAssetId(null);
+    }
+  }
+
   return (
     <div className="media-library-overlay" role="presentation" onMouseDown={onClose}>
       <section
@@ -123,7 +151,22 @@ export function MediaLibraryPanel({
             />
             {isUploading ? "上传中..." : "上传图片或视频"}
           </label>
+          <label className="media-image-size">
+            媒体插入宽度
+            <select
+              value={mediaWidth}
+              onChange={(event) => setMediaWidth(Number(event.target.value))}
+            >
+              <option value={320}>小 (320px)</option>
+              <option value={520}>中 (520px)</option>
+              <option value={760}>大 (760px)</option>
+              <option value={960}>超大 (960px)</option>
+            </select>
+          </label>
           <span>资源对所有参与编辑的用户可见，单文件不超过 100 MB。</span>
+          <span className="media-library-permission">
+            {canDeleteAssets ? "你是本文档创建者，可以删除资源。" : "仅本文档创建者可以删除资源。"}
+          </span>
         </div>
 
         {error ? <p className="media-library-error">{error}</p> : null}
@@ -149,16 +192,28 @@ export function MediaLibraryPanel({
                 </span>
                 <span>上传者: {asset.uploadedByName}</span>
               </div>
-              <button
-                type="button"
-                className="toolbar-button toolbar-button--primary"
-                onClick={() => {
-                  onInsert(buildMediaSnippet(asset));
-                  onClose();
-                }}
-              >
-                插入文档
-              </button>
+              <div className="media-card__actions">
+                <button
+                  type="button"
+                  className="toolbar-button toolbar-button--primary"
+                  onClick={() => {
+                    onInsert(buildMediaSnippet(asset, mediaWidth));
+                    onClose();
+                  }}
+                >
+                  插入文档
+                </button>
+                {canDeleteAssets ? (
+                  <button
+                    type="button"
+                    className="media-delete-button"
+                    disabled={deletingAssetId === asset.id}
+                    onClick={() => void handleDelete(asset)}
+                  >
+                    {deletingAssetId === asset.id ? "删除中..." : "删除"}
+                  </button>
+                ) : null}
+              </div>
             </article>
           ))}
         </div>
