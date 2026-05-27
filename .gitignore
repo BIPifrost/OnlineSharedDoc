@@ -54,3 +54,8 @@ docs/
 scheme.md
 task_division.md
 在线共享文档实验.md
+model/
+indexUI.md
+.agent/
+.git/
+..playwright-mcp/

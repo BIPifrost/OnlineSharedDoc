@@ -30,6 +30,34 @@ const navLinks = ["产品", "解决方案", "开发者"] as const;
 
 const footerLinks = ["隐私政策", "服务条款", "GitHub", "联系我们"] as const;
 
+const REPOSITORY_URL = "https://github.com/BIPifrost/Online-Shared-Doc.git";
+
+const navPopoverContent = {
+  产品:
+    "在线共享文档工作区是一款面向轻量文档共创场景的实时协同编辑产品。用户无需注册登录，只需输入昵称即可快速创建或加入文档，在同一页面内完成多人编辑、实时预览、版本保存、差异对比与内容导出。",
+  解决方案:
+    "通过匿名快速进入降低使用成本，借助实时协同编辑保证多人内容同步，通过快照保存和版本 diff 支持过程留痕与回溯，同时提供导出能力，方便文档沉淀、分享和后续使用。"
+} as const;
+
+const developers = [
+  {
+    name: "BIPifrost",
+    avatar: "https://github.com/BIPifrost.png"
+  },
+  {
+    name: "wwwaker",
+    avatar: "https://github.com/wwwaker.png"
+  },
+  {
+    name: "wolt59",
+    avatar: "https://github.com/wolt59.png"
+  },
+  {
+    name: "guiyijuanyou",
+    avatar: "https://github.com/guiyijuanyou.png"
+  }
+] as const;
+
 export function HomePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -118,14 +146,45 @@ export function HomePage() {
 
             <nav className="home-topbar__nav" aria-label="首页导航">
               {navLinks.map((link) => (
-                <a key={link} href="#" className="home-topbar__nav-link">
-                  {link}
-                </a>
+                <div key={link} className="home-topbar__nav-item">
+                  <a href="#" className="home-topbar__nav-link">
+                    {link}
+                  </a>
+
+                  {link === "开发者" ? (
+                    <div className="home-popover home-popover--developers" role="presentation">
+                      <div className="home-popover__developer-list">
+                        {developers.map((developer) => (
+                          <div
+                            key={developer.name}
+                            className="home-popover__developer-item"
+                          >
+                            <img
+                              className="home-popover__developer-avatar"
+                              src={developer.avatar}
+                              alt={`${developer.name} GitHub avatar`}
+                            />
+                            <span>{developer.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="home-popover" role="presentation">
+                      <p>{navPopoverContent[link]}</p>
+                    </div>
+                  )}
+                </div>
               ))}
             </nav>
           </div>
 
-          <a className="home-topbar__cta" href="#home-entry-cards">
+          <a
+            className="home-topbar__cta"
+            href={REPOSITORY_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
             立即加入
           </a>
         </div>
@@ -142,7 +201,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="home-prismatic" aria-hidden="true">
+        <section className="home-prismatic home-surface-hover" aria-hidden="true">
           <div className="home-prismatic__halo home-prismatic__halo--left" />
           <div className="home-prismatic__halo home-prismatic__halo--center" />
           <div className="home-prismatic__halo home-prismatic__halo--right" />
@@ -153,7 +212,7 @@ export function HomePage() {
         </section>
 
         <section className="home-entry-grid" id="home-entry-cards">
-          <article className="home-entry-card">
+          <article className="home-entry-card home-surface-hover">
             <h2>创建文档</h2>
 
             <label className="field field--minimal">
@@ -190,7 +249,7 @@ export function HomePage() {
             </button>
           </article>
 
-          <article className="home-entry-card">
+          <article className="home-entry-card home-surface-hover">
             <h2>加入文档</h2>
 
             <label className="field field--minimal">
@@ -227,7 +286,7 @@ export function HomePage() {
 
           <div className="home-notes__grid">
             {featureNotes.map((note) => (
-              <article key={note.title} className="note-card">
+              <article key={note.title} className="note-card home-surface-hover">
                 <h3>{note.title}</h3>
                 <p>{note.description}</p>
               </article>
@@ -244,9 +303,27 @@ export function HomePage() {
 
           <nav className="home-footer__nav" aria-label="页脚链接">
             {footerLinks.map((link) => (
-              <a key={link} href="#" className="home-footer__link">
-                {link}
-              </a>
+              link === "联系我们" ? (
+                <div key={link} className="home-footer__item">
+                  <a href="#" className="home-footer__link">
+                    {link}
+                  </a>
+                  <div className="home-popover home-popover--contact" role="presentation">
+                    <p>📞: 15111357285</p>
+                    <p>🏠: Central South University</p>
+                  </div>
+                </div>
+              ) : (
+                <a
+                  key={link}
+                  href={link === "GitHub" ? REPOSITORY_URL : "#"}
+                  className="home-footer__link"
+                  target={link === "GitHub" ? "_blank" : undefined}
+                  rel={link === "GitHub" ? "noreferrer" : undefined}
+                >
+                  {link}
+                </a>
+              )
             ))}
           </nav>
         </div>
