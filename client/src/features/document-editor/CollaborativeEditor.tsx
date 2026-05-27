@@ -21,6 +21,8 @@ export type CollaborativeEditorProps = {
   onContentChange?: (content: string) => void;
   insertRequest?: { id: number; text: string } | null;
   onInsertApplied?: (id: number) => void;
+  replaceRequest?: { id: number; text: string } | null;
+  onReplaceApplied?: (id: number) => void;
 };
 
 function createColorLight(color: string) {
@@ -47,7 +49,9 @@ export function CollaborativeEditor({
   onSyncStateChange,
   onContentChange,
   insertRequest,
-  onInsertApplied
+  onInsertApplied,
+  replaceRequest,
+  onReplaceApplied
 }: CollaborativeEditorProps) {
   const editorHostRef = useRef<HTMLDivElement | null>(null);
   const editorViewRef = useRef<EditorView | null>(null);
@@ -162,6 +166,25 @@ export function CollaborativeEditor({
     view.focus();
     onInsertApplied?.(insertRequest.id);
   }, [insertRequest, onInsertApplied]);
+
+  useEffect(() => {
+    const view = editorViewRef.current;
+    if (!view || !replaceRequest) {
+      return;
+    }
+
+    const currentText = view.state.doc.toString();
+    view.dispatch({
+      changes: {
+        from: 0,
+        to: currentText.length,
+        insert: replaceRequest.text
+      },
+      selection: { anchor: 0 }
+    });
+    view.focus();
+    onReplaceApplied?.(replaceRequest.id);
+  }, [replaceRequest, onReplaceApplied]);
 
   return (
     <section className={`collaborative-editor ${className ?? ""}`.trim()}>
