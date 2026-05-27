@@ -117,3 +117,14 @@ export type SystemEvent = {
   payloadJson: string;
   createdAt: string;
 };
+
+export type MediaAsset = {
+  id: string;
+  originalName: string;
+  mediaType: "image" | "video";
+  mimeType: string;
+  sizeBytes: number;
+  storageName: string;
+  uploadedByName: string;
+  createdAt: string;
+};

@@ -78,9 +78,11 @@ export function DocumentListPage() {
                   <span className="document-author">
                     创建者: {doc.createdByName}
                   </span>
-                  <span className="document-date">
-                    {formatDate(doc.createdAt)}
-                  </span>
+                  {doc.createdAt ? (
+                    <span className="document-date">
+                      {formatDate(doc.createdAt)}
+                    </span>
+                  ) : null}
                 </div>
               </Link>
             </article>

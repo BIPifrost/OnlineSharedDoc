@@ -5,6 +5,31 @@ type MarkdownPreviewProps = {
   content: string;
 };
 
+type PreviewSegment =
+  | { type: "markdown"; content: string }
+  | { type: "video"; label: string; url: string };
+
+function splitPreviewContent(content: string): PreviewSegment[] {
+  const segments: PreviewSegment[] = [];
+  const videoPattern = /!video\[([^\]]*)\]\(([^)\s]+)\)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = videoPattern.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: "markdown", content: content.slice(lastIndex, match.index) });
+    }
+    segments.push({ type: "video", label: match[1] || "视频", url: match[2] });
+    lastIndex = videoPattern.lastIndex;
+  }
+
+  if (lastIndex < content.length) {
+    segments.push({ type: "markdown", content: content.slice(lastIndex) });
+  }
+
+  return segments.length > 0 ? segments : [{ type: "markdown", content }];
+}
+
 export function MarkdownPreview({ content }: MarkdownPreviewProps) {
   if (!content.trim()) {
     return (
@@ -18,7 +43,17 @@ export function MarkdownPreview({ content }: MarkdownPreviewProps) {
   return (
     <div className="markdown-preview">
       <div className="markdown-preview__content">
+        {splitPreviewContent(content).map((segment, index) =>
+          segment.type === "video" ? (
+            <figure key={`video-${index}`} className="markdown-preview__figure markdown-preview__video">
+              <video src={segment.url} controls preload="metadata">
+                当前浏览器不支持视频播放。
+              </video>
+              <figcaption className="markdown-preview__figcaption">{segment.label}</figcaption>
+            </figure>
+          ) : (
         <ReactMarkdown
+          key={`markdown-${index}`}
           remarkPlugins={[remarkGfm]}
           components={{
             h1(props) {
@@ -142,8 +177,10 @@ export function MarkdownPreview({ content }: MarkdownPreviewProps) {
             }
           }}
         >
-          {content}
+          {segment.content}
         </ReactMarkdown>
+          )
+        )}
       </div>
     </div>
   );

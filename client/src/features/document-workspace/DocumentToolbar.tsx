@@ -20,6 +20,7 @@ type DocumentToolbarProps = {
   editorFullscreen: boolean;
   previewFullscreen: boolean;
   helpPanelOpen: boolean;
+  mediaPanelOpen: boolean;
   onSave: () => void;
   onExportClick: () => void;
   onHistoryClick: () => void;
@@ -28,6 +29,7 @@ type DocumentToolbarProps = {
   onToggleEditorFullscreen: () => void;
   onTogglePreviewFullscreen: () => void;
   onToggleHelpPanel: () => void;
+  onToggleMediaPanel: () => void;
   onTitleUpdate?: (newTitle: string) => void;
 };
 
@@ -45,6 +47,7 @@ export function DocumentToolbar({
   editorFullscreen: _editorFullscreen,
   previewFullscreen: _previewFullscreen,
   helpPanelOpen,
+  mediaPanelOpen,
   onSave,
   onExportClick,
   onHistoryClick,
@@ -53,6 +56,7 @@ export function DocumentToolbar({
   onToggleEditorFullscreen: _onToggleEditorFullscreen,
   onTogglePreviewFullscreen: _onTogglePreviewFullscreen,
   onToggleHelpPanel,
+  onToggleMediaPanel,
   onTitleUpdate
 }: DocumentToolbarProps) {
   const connectionMeta = getConnectionStatusMeta(connectionStatus);
@@ -222,6 +226,16 @@ export function DocumentToolbar({
           title="帮助文档 (Ctrl+/)"
         >
           {helpPanelOpen ? "隐藏帮助" : "帮助"}
+        </button>
+        <button
+          type="button"
+          className={`toolbar-button toolbar-button--media${mediaPanelOpen ? " toolbar-button--active" : ""}`}
+          onClick={onToggleMediaPanel}
+          disabled={disabled}
+          title="上传并插入图片或视频"
+          aria-pressed={mediaPanelOpen}
+        >
+          资源库
         </button>
         <button
           type="button"

@@ -224,6 +224,7 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
   const [previewFullscreen, setPreviewFullscreen] = useState(false);
   const [splitRatio, setSplitRatio] = useState(50); // 左右分栏比例 (0-100)
   const [helpPanelOpen, setHelpPanelOpen] = useState(false);
+  const [mediaPanelOpen, setMediaPanelOpen] = useState(false);
   const contentRef = useRef("");
   const lastSavedContentRef = useRef("");
   const lastLocalSavedVersionRef = useRef<number | null>(null);
@@ -282,6 +283,7 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     setPreviewFullscreen(false);
     setSplitRatio(50);
     setHelpPanelOpen(false);
+    setMediaPanelOpen(false);
     contentRef.current = "";
     lastSavedContentRef.current = "";
     lastLocalSavedVersionRef.current = null;
@@ -806,6 +808,10 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     setHelpPanelOpen((prev) => !prev);
   }
 
+  function toggleMediaPanel() {
+    setMediaPanelOpen((previous) => !previous);
+  }
+
   const visibleUsers =
     presenceUsers.length > 0
       ? presenceUsers
@@ -860,6 +866,7 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     previewFullscreen,
     splitRatio,
     helpPanelOpen,
+    mediaPanelOpen,
     // 布局控制函数
     toggleLeftPanel,
     toggleRightPanel,
@@ -867,6 +874,7 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     togglePreviewFullscreen,
     handleSplitRatioChange,
     toggleHelpPanel,
+    toggleMediaPanel,
     handleEditorConnectionChange,
     handleEditorContentChange,
     handleEditorSyncChange,

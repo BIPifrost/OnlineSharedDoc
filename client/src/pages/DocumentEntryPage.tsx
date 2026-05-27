@@ -9,9 +9,11 @@ import { DocumentToolbar } from "../features/document-workspace/DocumentToolbar"
 import { ResizableSplitPane } from "../features/document-workspace/ResizableSplitPane";
 import { SidebarDrawer } from "../features/document-workspace/SidebarDrawer";
 import { HelpPanel } from "../features/document-workspace/HelpPanel";
+import { MediaLibraryPanel } from "../features/document-workspace/MediaLibraryPanel";
 import { formatDateTime } from "../features/document-workspace/status";
 import { useDocumentWorkspace } from "../features/document-workspace/useDocumentWorkspace";
 import { ExportPanel } from "../features/export-panel";
+import { useState } from "react";
 
 const FALLBACK_EDITOR_COLOR = "#0ea5e9";
 
@@ -19,6 +21,7 @@ export function DocumentEntryPage() {
   const { docId = "" } = useParams();
   const [searchParams] = useSearchParams();
   const workspace = useDocumentWorkspace(docId, searchParams.get("name"));
+  const [insertRequest, setInsertRequest] = useState<{ id: number; text: string } | null>(null);
 
   // Ref to prevent stale closures in keyboard handler
   const workspaceRef = useRef(workspace);
@@ -140,6 +143,7 @@ export function DocumentEntryPage() {
         editorFullscreen={workspace.editorFullscreen}
         previewFullscreen={workspace.previewFullscreen}
         helpPanelOpen={workspace.helpPanelOpen}
+        mediaPanelOpen={workspace.mediaPanelOpen}
         onSave={workspace.handleSave}
         onExportClick={workspace.handleExportClick}
         onHistoryClick={handleHistoryClick}
@@ -148,6 +152,7 @@ export function DocumentEntryPage() {
         onToggleEditorFullscreen={workspace.toggleEditorFullscreen}
         onTogglePreviewFullscreen={workspace.togglePreviewFullscreen}
         onToggleHelpPanel={workspace.toggleHelpPanel}
+        onToggleMediaPanel={workspace.toggleMediaPanel}
         onTitleUpdate={workspace.handleTitleUpdate}
       />
 
@@ -183,6 +188,15 @@ export function DocumentEntryPage() {
         <HelpPanel
           isOpen={workspace.helpPanelOpen}
           onClose={workspace.toggleHelpPanel}
+        />
+
+        <MediaLibraryPanel
+          isOpen={workspace.mediaPanelOpen}
+          guestName={workspace.guestName}
+          onClose={workspace.toggleMediaPanel}
+          onInsert={(text) => {
+            setInsertRequest({ id: Date.now(), text });
+          }}
         />
 
         {/* 主编辑区 - 双栏沉浸式布局 */}
@@ -238,6 +252,10 @@ export function DocumentEntryPage() {
                     onConnectionStatusChange={workspace.handleEditorConnectionChange}
                     onSyncStateChange={workspace.handleEditorSyncChange}
                     onContentChange={workspace.handleEditorContentChange}
+                    insertRequest={insertRequest}
+                    onInsertApplied={(id) => {
+                      setInsertRequest((current) => current?.id === id ? null : current);
+                    }}
                   />
                 </div>
               }

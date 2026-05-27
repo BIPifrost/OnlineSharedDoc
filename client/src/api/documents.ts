@@ -10,6 +10,7 @@ export type DocumentSummary = {
   id: string;
   title: string;
   createdByName: string;
+  createdAt?: string;
 };
 
 export type DocumentDetail = {
