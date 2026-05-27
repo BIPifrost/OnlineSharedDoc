@@ -17,21 +17,6 @@ export function SidebarDrawer({
 }: SidebarDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // 点击外部关闭
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleClickOutside(event: MouseEvent) {
-      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose]);
-
-  // ESC 键关闭
   useEffect(() => {
     if (!isOpen) return;
 
@@ -47,12 +32,10 @@ export function SidebarDrawer({
 
   return (
     <>
-      {/* 遮罩层 */}
-      {isOpen && (
+      {isOpen ? (
         <div className="sidebar-drawer-overlay" onClick={onClose} aria-hidden="true" />
-      )}
+      ) : null}
 
-      {/* 抽屉面板 */}
       <aside
         ref={drawerRef}
         className={`sidebar-drawer sidebar-drawer--${position}${
