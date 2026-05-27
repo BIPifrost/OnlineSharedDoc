@@ -234,6 +234,7 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatDraft, setChatDraft] = useState("");
   const [systemMessages, setSystemMessages] = useState<WorkspaceSystemMessage[]>([]);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   
   // 布局状态管理
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
@@ -252,6 +253,8 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
   const socketRef = useRef<
     Socket<SocketServerToClientEvents, SocketClientToServerEvents> | null
   >(null);
+  const rightPanelOpenRef = useRef(false);
+  const lastSentMessageRef = useRef<{ text: string; time: number } | null>(null);
 
   const connectionStatus = useMemo(
     () => combineConnectionStatus(editorConnectionStatus, socketConnectionStatus),
@@ -261,6 +264,10 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
   useEffect(() => {
     contentRef.current = editorContent;
   }, [editorContent]);
+
+  useEffect(() => {
+    rightPanelOpenRef.current = rightPanelOpen;
+  }, [rightPanelOpen]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !guestName) {
@@ -427,6 +434,15 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     });
     socket.on("chat:new", (message) => {
       setChatMessages((previous) => appendUniqueChatMessage(previous, message));
+      const lastSent = lastSentMessageRef.current;
+      const isOwnMessage = lastSent !== null && message.message === lastSent.text && Date.now() - lastSent.time < 5000;
+      if (isOwnMessage) {
+        lastSentMessageRef.current = null;
+        return;
+      }
+      if (!rightPanelOpenRef.current) {
+        setHasUnreadMessages(true);
+      }
     });
     socket.on("system:new", (event) => {
       const payload = parseSystemPayload(event.payloadJson);
@@ -449,6 +465,9 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
       setSystemMessages((previous) =>
         appendUniqueSystemMessage(previous, formatRealtimeSystemMessage(event))
       );
+      if (!rightPanelOpenRef.current) {
+        setHasUnreadMessages(true);
+      }
     });
     socket.on("document:saved:broadcast", (payload) => {
       const now = new Date().toISOString();
@@ -865,6 +884,7 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
       return;
     }
 
+    lastSentMessageRef.current = { text: message, time: Date.now() };
     socketRef.current.emit("chat:send", {
       docId,
       name: guestName,
@@ -917,7 +937,10 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
   }
 
   function toggleRightPanel() {
-    setRightPanelOpen((prev) => !prev);
+    setRightPanelOpen((prev) => {
+      return !prev;
+    });
+    setHasUnreadMessages(false);
     if (editorFullscreen || previewFullscreen) {
       setEditorFullscreen(false);
       setPreviewFullscreen(false);
@@ -999,6 +1022,7 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
     chatMessages,
     chatDraft,
     systemMessages,
+    hasUnreadMessages,
     canSendChat: chatDraft.trim().length > 0,
     latestActivityLabel: getEditorActivityLabel({
       loadState,

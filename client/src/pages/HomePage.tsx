@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createDocument, getDocumentDetail } from "../api";
 import {
   buildDocumentUrl,
@@ -145,6 +145,12 @@ export function HomePage() {
             </a>
 
             <nav className="home-topbar__nav" aria-label="首页导航">
+              <div className="home-topbar__nav-item">
+                <Link to="/documents" className="home-topbar__nav-link">
+                  查看所有文档
+                </Link>
+              </div>
+
               {navLinks.map((link) => (
                 <div key={link} className="home-topbar__nav-item">
                   <a href="#" className="home-topbar__nav-link">

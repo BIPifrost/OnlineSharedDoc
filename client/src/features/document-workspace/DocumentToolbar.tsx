@@ -17,6 +17,7 @@ type DocumentToolbarProps = {
   isExportPanelOpen: boolean;
   leftPanelOpen: boolean;
   rightPanelOpen: boolean;
+  hasUnreadMessages: boolean;
   editorFullscreen: boolean;
   previewFullscreen: boolean;
   helpPanelOpen: boolean;
@@ -45,6 +46,7 @@ export function DocumentToolbar({
   isExportPanelOpen,
   leftPanelOpen,
   rightPanelOpen,
+  hasUnreadMessages,
   editorFullscreen: editorFullscreenHidden,
   previewFullscreen: previewFullscreenHidden,
   helpPanelOpen,
@@ -218,7 +220,12 @@ export function DocumentToolbar({
           disabled={disabled || editorFullscreenHidden || previewFullscreenHidden}
           title="聊天和系统消息"
         >
-          {rightPanelOpen ? "隐藏面板" : "显示面板"}
+          <span className="toolbar-button__label">
+            {rightPanelOpen ? "隐藏面板" : "显示面板"}
+          </span>
+          {hasUnreadMessages && !rightPanelOpen ? (
+            <span className="toolbar-button__badge" aria-hidden="true" />
+          ) : null}
         </button>
         <button
           type="button"

@@ -129,6 +129,7 @@ export function DocumentEntryPage() {
         isExportPanelOpen={workspace.isExportPanelOpen}
         leftPanelOpen={workspace.leftPanelOpen}
         rightPanelOpen={workspace.rightPanelOpen}
+        hasUnreadMessages={workspace.hasUnreadMessages}
         editorFullscreen={workspace.editorFullscreen}
         previewFullscreen={workspace.previewFullscreen}
         helpPanelOpen={workspace.helpPanelOpen}

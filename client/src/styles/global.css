@@ -931,6 +931,7 @@ input {
 }
 
 .toolbar-button {
+  position: relative;
   border: none;
   background: transparent;
   color: #64748b;
@@ -970,6 +971,16 @@ input {
 .toolbar-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.toolbar-button__badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
 }
 
 /* 工作区布局 */
