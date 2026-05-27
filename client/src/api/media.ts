@@ -17,6 +17,17 @@ type ApiEnvelope<T> = {
   error?: string;
 };
 
+type MediaUploadStatus = {
+  uploadId: string;
+  chunkSizeBytes: number;
+  chunkCount: number;
+  uploadedChunks: number[];
+};
+
+function getUploadStorageKey(file: File) {
+  return `media-upload:${file.name}:${file.size}:${file.lastModified}:${file.type}`;
+}
+
 async function readJson<T>(response: Response) {
   const payload = (await response.json()) as ApiEnvelope<T>;
   if (!response.ok || !payload.success || payload.data === undefined) {
@@ -30,22 +41,71 @@ export async function getMediaAssets() {
   return readJson<MediaAsset[]>(response);
 }
 
-export async function uploadMediaAsset(file: File, uploadedByName: string) {
+export async function uploadMediaAsset(
+  file: File,
+  uploadedByName: string,
+  onProgress?: (progress: number, resumed: boolean) => void
+) {
   const name = validateGuestName(uploadedByName);
+  const storageKey = getUploadStorageKey(file);
 
   try {
-    const response = await fetch(
-      `/api/media?name=${encodeURIComponent(file.name)}&uploadedBy=${encodeURIComponent(name)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": file.type
-        },
-        body: file
+    let status: MediaUploadStatus | null = null;
+    const savedUploadId = window.localStorage.getItem(storageKey);
+    if (savedUploadId) {
+      const response = await fetch(`/api/media/uploads/${encodeURIComponent(savedUploadId)}`);
+      if (response.ok) {
+        status = await readJson<MediaUploadStatus>(response);
+      } else {
+        window.localStorage.removeItem(storageKey);
       }
-    );
+    }
 
-    return await readJson<MediaAsset>(response);
+    if (!status) {
+      const response = await fetch("/api/media/uploads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file.name,
+          mimeType: file.type,
+          sizeBytes: file.size,
+          uploadedBy: name
+        })
+      });
+      status = await readJson<MediaUploadStatus>(response);
+      window.localStorage.setItem(storageKey, status.uploadId);
+    }
+
+    const completed = new Set(status.uploadedChunks);
+    const resumed = completed.size > 0;
+    onProgress?.(Math.round((completed.size / status.chunkCount) * 100), resumed);
+
+    for (let index = 0; index < status.chunkCount; index += 1) {
+      if (completed.has(index)) {
+        continue;
+      }
+      const start = index * status.chunkSizeBytes;
+      const chunk = file.slice(start, Math.min(file.size, start + status.chunkSizeBytes));
+      const response = await fetch(
+        `/api/media/uploads/${encodeURIComponent(status.uploadId)}/chunks/${index}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/octet-stream" },
+          body: chunk
+        }
+      );
+      await readJson<MediaUploadStatus>(response);
+      completed.add(index);
+      onProgress?.(Math.round((completed.size / status.chunkCount) * 100), resumed);
+    }
+
+    const response = await fetch(
+      `/api/media/uploads/${encodeURIComponent(status.uploadId)}/complete`,
+      { method: "POST" }
+    );
+    const asset = await readJson<MediaAsset>(response);
+    window.localStorage.removeItem(storageKey);
+    return asset;
   } catch (error) {
     throw new Error(getReadableErrorMessage(error, "媒体上传失败，请重试。"));
   }

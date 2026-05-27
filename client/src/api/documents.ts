@@ -4,7 +4,7 @@ import {
   validateGuestName
 } from "../features/auth-guest/home-flow";
 
-export type ExportFormat = "markdown" | "html" | "txt";
+export type ExportFormat = "markdown" | "html" | "txt" | "media-zip";
 
 export type DocumentSummary = {
   id: string;
@@ -270,9 +270,19 @@ export async function downloadDocumentExport(input: {
 }) {
   const normalizedDocId = validateDocIdInput(input.docId);
   const exportTitle = input.exportFileName ?? input.fallbackTitle;
-  const response = await fetch(
-    `/api/documents/${encodeURIComponent(normalizedDocId)}/export?format=${input.format}&title=${encodeURIComponent(exportTitle)}`
-  );
+  const downloadUrl =
+    `/api/documents/${encodeURIComponent(normalizedDocId)}/export?format=${input.format}&title=${encodeURIComponent(exportTitle)}`;
+  if (input.format === "media-zip") {
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `${exportTitle || "document"}.zip`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    return { fileName: link.download };
+  }
+
+  const response = await fetch(downloadUrl);
   const file = await readBlobResponse(
     response,
     "导出失败，请重试。"

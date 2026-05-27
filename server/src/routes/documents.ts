@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { buildExportDocument } from "../modules/exports/index.js";
+import { buildExportDocument, streamMediaArchive } from "../modules/exports/index.js";
 import { buildSnapshotDiff } from "../modules/history/diff.js";
 import { createDocumentService } from "../modules/documents/service.js";
 import { HttpError } from "../services/http-errors.js";
@@ -224,7 +224,7 @@ export function registerDocumentRoutes(app: Express) {
     }
   });
 
-  app.get("/api/documents/:docId/export", (request: Request, response: Response) => {
+  app.get("/api/documents/:docId/export", async (request: Request, response: Response) => {
     try {
       const docId = validateDocId(request.params.docId);
       const format = validateExportFormat(request.query.format);
@@ -233,6 +233,17 @@ export function registerDocumentRoutes(app: Express) {
           ? request.query.title
           : undefined;
       const detail = documentService.getDocumentDetail(docId);
+      if (format === "media-zip") {
+        response.setHeader("Content-Type", "application/zip");
+        response.setHeader(
+          "Content-Disposition",
+          buildContentDisposition(exportTitle ?? detail.document.title, "zip")
+        );
+        response.status(200);
+        await streamMediaArchive(detail.content, response);
+        return;
+      }
+
       const exported = buildExportDocument(
         format,
         exportTitle ?? detail.document.title,
@@ -247,6 +258,10 @@ export function registerDocumentRoutes(app: Express) {
 
       return response.status(200).send(exported.content);
     } catch (error) {
+      if (response.headersSent) {
+        response.destroy();
+        return;
+      }
       return handleRouteError(response, error, {
         path: "GET /api/documents/:docId/export",
         docId: request.params.docId,

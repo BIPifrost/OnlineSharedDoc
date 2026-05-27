@@ -1,4 +1,4 @@
-export type ExportFormat = "markdown" | "html" | "txt";
+export type ExportFormat = "markdown" | "html" | "txt" | "media-zip";
 
 export type SystemEventType =
   | "user_joined"

@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import type {
   DocumentDiffResult,
   DocumentSnapshotDetail,
@@ -7,6 +9,7 @@ import { formatDateTime } from "../document-workspace/status";
 import type { WorkspaceAsyncState } from "../document-workspace/types";
 
 type DocumentHistoryPanelProps = {
+  isOpen: boolean;
   snapshots: DocumentSnapshotSummary[];
   selectedSnapshotIds: number[];
   snapshotDetail: DocumentSnapshotDetail | null;
@@ -16,6 +19,7 @@ type DocumentHistoryPanelProps = {
   diffState: WorkspaceAsyncState;
   diffError: string;
   onClearSelection: () => void;
+  onClose: () => void;
 };
 
 function getSnapshotLabel(
@@ -27,6 +31,7 @@ function getSnapshotLabel(
 }
 
 export function DocumentHistoryPanel({
+  isOpen,
   snapshots,
   selectedSnapshotIds,
   snapshotDetail,
@@ -35,24 +40,55 @@ export function DocumentHistoryPanel({
   diffResult,
   diffState,
   diffError,
-  onClearSelection
+  onClearSelection,
+  onClose
 }: DocumentHistoryPanelProps) {
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) {
+    return null;
+  }
+
   const selectedLabels = selectedSnapshotIds.map((snapshotId) =>
     getSnapshotLabel(snapshots, snapshotId)
   );
 
-  return (
-    <section className="workspace-panel workspace-panel--history-detail">
-      <div className="workspace-panel__header">
+  return createPortal((
+    <div className="workspace-modal-overlay" role="presentation" onMouseDown={onClose}>
+    <section
+      className="workspace-modal workspace-modal--history workspace-panel workspace-panel--history-detail"
+      role="dialog"
+      aria-modal="true"
+      aria-label="历史快照与差异"
+      onMouseDown={(event) => event.stopPropagation()}
+    >
+      <div className="workspace-panel__header workspace-modal__header">
         <div>
           <p className="workspace-panel__eyebrow">版本比较</p>
           <h2>快照详情与差异</h2>
         </div>
-        <span className="workspace-panel__meta">
-          已选择 {selectedSnapshotIds.length} / 2
-        </span>
+        <div className="workspace-modal__header-actions">
+          <span className="workspace-panel__meta">
+            已选择 {selectedSnapshotIds.length} / 2
+          </span>
+          <button type="button" className="workspace-modal__close" onClick={onClose} aria-label="关闭历史窗口">
+            ×
+          </button>
+        </div>
       </div>
 
+      <div className="workspace-modal__content">
       <div className="history-selection-bar">
         <div className="history-selection-bar__chips">
           {selectedLabels.length > 0 ? (
@@ -158,6 +194,8 @@ export function DocumentHistoryPanel({
           ) : null}
         </>
       ) : null}
+      </div>
     </section>
-  );
+    </div>
+  ), document.body);
 }
