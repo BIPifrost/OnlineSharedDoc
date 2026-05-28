@@ -328,3 +328,15 @@ export async function updateDocumentTitle(input: {
 
   return await readJson<{ id: string; title: string; updatedAt: string }>(response);
 }
+
+export async function deleteDocument(docId: string) {
+  const normalizedDocId = validateDocIdInput(docId);
+  const response = await fetch(
+    `/api/documents/${encodeURIComponent(normalizedDocId)}`,
+    {
+      method: "DELETE"
+    }
+  );
+
+  return await readJson<{ id: string; deletedAt: string }>(response);
+}

@@ -66,6 +66,13 @@ export function createDocumentsRepository(database: Database.Database) {
     WHERE id = @id
   `);
 
+  const deleteDocumentStatement = database.prepare(`
+    UPDATE documents
+    SET is_deleted = 1,
+        updated_at = @updatedAt
+    WHERE id = @id AND is_deleted = 0
+  `);
+
   const selectAllDocumentsStatement = database.prepare(`
     SELECT
       id,
@@ -115,6 +122,13 @@ export function createDocumentsRepository(database: Database.Database) {
         title,
         updatedAt
       });
+    },
+    deleteDocument(documentId: string, updatedAt: string) {
+      const result = deleteDocumentStatement.run({
+        id: documentId,
+        updatedAt
+      });
+      return result.changes > 0;
     }
   };
 }

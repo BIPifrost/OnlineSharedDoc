@@ -615,6 +615,11 @@ export function useDocumentWorkspace(docId: string, queryName: string | null) {
       return;
     }
 
+    if (contentRef.current === lastSavedContentRef.current) {
+      setSaveStatus("saved");
+      return;
+    }
+
     setSaveStatus("saving");
 
     try {

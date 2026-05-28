@@ -149,6 +149,19 @@ export function registerDocumentRoutes(app: Express) {
     }
   });
 
+  app.delete("/api/documents/:docId", (request: Request, response: Response) => {
+    try {
+      const docId = validateDocId(request.params.docId);
+      const result = documentService.deleteDocument(docId);
+      return sendSuccess(response, 200, result);
+    } catch (error) {
+      return handleRouteError(response, error, {
+        path: "DELETE /api/documents/:docId",
+        docId: request.params.docId
+      });
+    }
+  });
+
   app.get("/api/documents/:docId/snapshots", (request: Request, response: Response) => {
     try {
       const docId = validateDocId(request.params.docId);

@@ -139,6 +139,23 @@ export function createDocumentService() {
         title,
         updatedAt: now
       };
+    },
+    deleteDocument(docId: string) {
+      const dataAccess = getDataAccess();
+      const document = dataAccess.documents.getDocumentById(docId);
+
+      if (!document || document.isDeleted) {
+        throw new HttpError(404, "文档未找到。");
+      }
+
+      const now = new Date().toISOString();
+      const deleted = dataAccess.documents.deleteDocument(docId, now);
+
+      if (!deleted) {
+        throw new HttpError(404, "文档未找到。");
+      }
+
+      return { id: docId, deletedAt: now };
     }
   };
 }

@@ -3031,6 +3031,40 @@ input {
   color: inherit;
 }
 
+.document-card {
+  position: relative;
+}
+
+.document-delete-button {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.document-card:hover .document-delete-button {
+  opacity: 1;
+}
+
+.document-delete-button:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.document-delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .document-title {
   margin: 0 0 12px;
   font-size: 1.15rem;

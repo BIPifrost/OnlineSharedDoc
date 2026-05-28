@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAllDocuments } from "../api";
+import { deleteDocument, getAllDocuments } from "../api";
 import type { DocumentSummary } from "../api/documents";
 
 export function DocumentListPage() {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDocuments();
@@ -22,6 +23,28 @@ export function DocumentListPage() {
       setError(err instanceof Error ? err.message : "加载文档列表失败");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete(docId: string) {
+    if (deletingDocId) {
+      return;
+    }
+
+    const confirmed = window.confirm("确定要删除此文档吗？此操作不可撤销。");
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingDocId(docId);
+
+    try {
+      await deleteDocument(docId);
+      setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "删除文档失败，请重试。");
+    } finally {
+      setDeletingDocId(null);
     }
   }
 
@@ -85,6 +108,18 @@ export function DocumentListPage() {
                   ) : null}
                 </div>
               </Link>
+              <button
+                type="button"
+                className="document-delete-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(doc.id);
+                }}
+                disabled={deletingDocId === doc.id}
+                title="删除此文档"
+              >
+                {deletingDocId === doc.id ? "删除中..." : "删除"}
+              </button>
             </article>
           ))}
         </div>

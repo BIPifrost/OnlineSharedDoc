@@ -2,6 +2,7 @@ export {
   getAllDocuments,
   getAllImportSnapshots,
   createDocument,
+  deleteDocument,
   downloadDocumentExport,
   getDocumentChatMessages,
   getDocumentDetail,
