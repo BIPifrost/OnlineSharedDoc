@@ -24,6 +24,7 @@ type DocumentToolbarProps = {
   helpPanelOpen: boolean;
   mediaPanelOpen: boolean;
   onSave: () => void;
+  onShareClick:() => void;
   onExportClick: () => void;
   onImportClick: () => void;
   onHistoryClick: () => void;
@@ -34,6 +35,7 @@ type DocumentToolbarProps = {
   onToggleHelpPanel: () => void;
   onToggleMediaPanel: () => void;
   onTitleUpdate?: (newTitle: string) => void;
+  
 };
 
 export function DocumentToolbar({
@@ -53,6 +55,7 @@ export function DocumentToolbar({
   helpPanelOpen,
   mediaPanelOpen,
   onSave,
+  onShareClick,
   onExportClick,
   onImportClick,
   onHistoryClick,
@@ -185,7 +188,7 @@ export function DocumentToolbar({
 
       <div className="workspace-toolbar__status-row">
         <span
-          className={`status-pill status-pill--${connectionMeta.tone}`}
+          className={`status-pill status-pill--connection status-pill--${connectionMeta.tone}`}
           aria-label={`连接状态 ${connectionMeta.label}`}
         >
           连接 · {connectionMeta.label}
@@ -249,6 +252,14 @@ export function DocumentToolbar({
           aria-pressed={mediaPanelOpen}
         >
           资源库
+        </button>
+        <button
+          type="button"
+          className="toolbar-button toolbar-button--primary"
+          onClick={onShareClick}
+          disabled={disabled}
+        >
+          分享
         </button>
         <button
           type="button"

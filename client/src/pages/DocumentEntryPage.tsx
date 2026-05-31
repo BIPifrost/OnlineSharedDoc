@@ -27,6 +27,9 @@ export function DocumentEntryPage() {
   } | null>(null);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
 
+  const [isShareNoticeVisible, setIsShareNoticeVisible] = useState(false);
+  const shareNoticeTimerRef = useRef<number | null>(null);
+
   const workspaceRef = useRef(workspace);
   workspaceRef.current = workspace;
 
@@ -34,7 +37,7 @@ export function DocumentEntryPage() {
     workspace.presenceUsers.find((user) =>
       workspace.currentSocketId
         ? user.clientId === workspace.currentSocketId
-        : user.name === workspace.guestName
+        : user.name === workspace.guestName,
     ) ?? workspace.presenceUsers[0];
 
   const editorUserColor = currentUser?.color ?? FALLBACK_EDITOR_COLOR;
@@ -46,6 +49,20 @@ export function DocumentEntryPage() {
     setIsHistoryPanelOpen((previous) => !previous);
   }
 
+  async function handleShareClick() {
+    await navigator.clipboard.writeText(window.location.href);
+
+    setIsShareNoticeVisible(true);
+
+    if (shareNoticeTimerRef.current !== null) {
+      window.clearTimeout(shareNoticeTimerRef.current);
+    }
+
+    shareNoticeTimerRef.current = window.setTimeout(() => {
+      setIsShareNoticeVisible(false);
+      shareNoticeTimerRef.current = null;
+    }, 2000);
+  }
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
     const modKey = isMac ? event.metaKey : event.ctrlKey;
@@ -100,6 +117,14 @@ export function DocumentEntryPage() {
     };
   }, [handleKeyDown]);
 
+  useEffect(() => {
+    return () => {
+      if (shareNoticeTimerRef.current !== null) {
+        window.clearTimeout(shareNoticeTimerRef.current);
+      }
+    };
+  }, []);
+
   const rightDrawerContent = (
     <DocumentSidebarRight
       chatMessages={workspace.chatMessages}
@@ -113,6 +138,11 @@ export function DocumentEntryPage() {
 
   return (
     <main className="workspace-shell workspace-shell--immersive">
+      {isShareNoticeVisible ? (
+        <div className="share-copy-notice" role="status">
+          已复制分享链接
+        </div>
+      ) : null}
       <DocumentToolbar
         title={toolbarTitle}
         docId={workspace.docId}
@@ -134,6 +164,7 @@ export function DocumentEntryPage() {
         helpPanelOpen={workspace.helpPanelOpen}
         mediaPanelOpen={workspace.mediaPanelOpen}
         onSave={workspace.handleSave}
+        onShareClick={handleShareClick}
         onExportClick={workspace.handleExportClick}
         onImportClick={workspace.openImportModal}
         onHistoryClick={handleHistoryClick}
@@ -181,7 +212,9 @@ export function DocumentEntryPage() {
           isOpen={workspace.mediaPanelOpen}
           docId={workspace.docId}
           guestName={workspace.guestName}
-          canDeleteAssets={workspace.detail?.createdByName === workspace.guestName}
+          canDeleteAssets={
+            workspace.detail?.createdByName === workspace.guestName
+          }
           onClose={workspace.toggleMediaPanel}
           onInsert={(text) => {
             setInsertRequest({ id: Date.now(), text });
@@ -237,7 +270,9 @@ export function DocumentEntryPage() {
                         type="button"
                         className="immersive-action-button"
                         onClick={workspace.toggleEditorFullscreen}
-                        title={workspace.editorFullscreen ? "退出全屏" : "全屏显示"}
+                        title={
+                          workspace.editorFullscreen ? "退出全屏" : "全屏显示"
+                        }
                       >
                         {workspace.editorFullscreen ? "◱" : "◰"}
                       </button>
@@ -254,13 +289,15 @@ export function DocumentEntryPage() {
                     docId={workspace.docId}
                     userName={workspace.guestName}
                     userColor={editorUserColor}
-                    onConnectionStatusChange={workspace.handleEditorConnectionChange}
+                    onConnectionStatusChange={
+                      workspace.handleEditorConnectionChange
+                    }
                     onSyncStateChange={workspace.handleEditorSyncChange}
                     onContentChange={workspace.handleEditorContentChange}
                     insertRequest={insertRequest}
                     onInsertApplied={(id) => {
                       setInsertRequest((current) =>
-                        current?.id === id ? null : current
+                        current?.id === id ? null : current,
                       );
                     }}
                     replaceRequest={workspace.replaceRequest}
@@ -280,7 +317,9 @@ export function DocumentEntryPage() {
                         type="button"
                         className="immersive-action-button"
                         onClick={workspace.togglePreviewFullscreen}
-                        title={workspace.previewFullscreen ? "退出全屏" : "全屏显示"}
+                        title={
+                          workspace.previewFullscreen ? "退出全屏" : "全屏显示"
+                        }
                       >
                         {workspace.previewFullscreen ? "◱" : "◰"}
                       </button>
